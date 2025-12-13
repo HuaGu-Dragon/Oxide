@@ -1,6 +1,6 @@
 use anyhow::Context;
 use crossterm::{
-    event::{Event, KeyCode, read},
+    event::{Event, KeyCode, KeyModifiers, read},
     terminal::{disable_raw_mode, enable_raw_mode},
 };
 
@@ -19,6 +19,7 @@ impl Editor {
             println!("{event:?}");
             if let Event::Key(e) = event
                 && let KeyCode::Char('q') = e.code
+                && let KeyModifiers::CONTROL = e.modifiers
             {
                 break;
             }

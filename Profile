@@ -1,1 +1,1 @@
-error: Error reading script file 'Set-Location 'E:\Code\Rust\oxide'; & 'E:\Zed\Zed.exe' --printenv':
+error: Error reading script file 'Set-Location 'e:\Program Files\Rust\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\crossterm-0.29.0\src'; & 'E:\Zed\Zed.exe' --printenv':

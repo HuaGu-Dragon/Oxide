@@ -1,0 +1,1 @@
+error: Error reading script file 'Set-Location 'E:\Code\Rust\oxide'; & 'E:\Zed\Zed.exe' --printenv':

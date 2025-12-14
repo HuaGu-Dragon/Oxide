@@ -14,7 +14,7 @@ use crossterm::{
 pub fn init() -> anyhow::Result<()> {
     enable_raw_mode().context("enable raw mode in terminal")?;
     clear_screen()?;
-    move_cursor(0, 0)
+    move_caret(0, 0)
 }
 
 pub fn terminate() -> anyhow::Result<()> {
@@ -35,16 +35,16 @@ pub fn size() -> anyhow::Result<(u16, u16)> {
     terminal::size().context("get the terminal's size")
 }
 
-pub fn move_cursor(col: u16, row: u16) -> anyhow::Result<()> {
+pub fn move_caret(col: u16, row: u16) -> anyhow::Result<()> {
     queue!(stdout(), cursor::MoveTo(col, row))
         .with_context(|| format!("move cursor into ({col}, {row})"))
 }
 
-pub fn hide_cursor() -> anyhow::Result<()> {
+pub fn hide_caret() -> anyhow::Result<()> {
     queue!(stdout(), Hide).context("hide the cursor")
 }
 
-pub fn show_cursor() -> anyhow::Result<()> {
+pub fn show_caret() -> anyhow::Result<()> {
     queue!(stdout(), cursor::Show).context("show the cursor")
 }
 

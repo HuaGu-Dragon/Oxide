@@ -49,6 +49,8 @@ impl Editor {
     }
 
     fn refresh_screen(&mut self) -> anyhow::Result<()> {
+        terminal::hide_cursor()?;
+
         if self.should_quit {
             terminal::clear_screen()?;
         } else {
@@ -56,7 +58,8 @@ impl Editor {
             terminal::move_cursor(0, 0)?;
         }
 
-        Ok(())
+        terminal::show_cursor()?;
+        terminal::execute()
     }
 
     fn draw_rows() -> anyhow::Result<()> {
@@ -65,6 +68,7 @@ impl Editor {
         for row in 0..rows.saturating_sub(1) {
             terminal::move_cursor(0, row)?;
 
+            terminal::clear_line()?;
             terminal::print("~")?;
         }
 

@@ -5,8 +5,7 @@ use crate::editor::Editor;
 mod editor;
 
 fn main() -> anyhow::Result<()> {
-    let editor = Editor::new();
-    editor.run().context("running exide")?;
+    Editor::new().run().context("run the editor")?;
 
     Ok(())
 }

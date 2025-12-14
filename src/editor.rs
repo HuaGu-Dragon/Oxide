@@ -1,7 +1,10 @@
 use anyhow::Context;
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers, read};
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, read};
 
 use crate::terminal;
+
+const NAME: &str = env!("CARGO_PKG_NAME");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub struct Editor {
     should_quit: bool,
@@ -39,6 +42,7 @@ impl Editor {
             Event::Key(KeyEvent {
                 code: KeyCode::Char('q'),
                 modifiers: KeyModifiers::CONTROL,
+                kind: KeyEventKind::Press,
                 ..
             })
         ) {
@@ -70,7 +74,24 @@ impl Editor {
 
             terminal::clear_line()?;
             terminal::print("~")?;
+            if row == rows / 3 {
+                Self::draw_welcome(row)?;
+            }
         }
+
+        Ok(())
+    }
+
+    fn draw_welcome(row: u16) -> anyhow::Result<()> {
+        let message = format!("{NAME} editor -- version {VERSION}");
+        let len = message.len();
+
+        let (col, _) = terminal::size()?;
+        let col = col as usize;
+
+        let start = col.saturating_sub(len) / 2;
+        terminal::move_cursor(start as u16, row)?;
+        terminal::print(message)?;
 
         Ok(())
     }

@@ -15,7 +15,7 @@ pub struct Cli {
 }
 
 fn main() -> anyhow::Result<()> {
-    Editor::new().run().context("run the editor")?;
+    Editor::new()?.run().context("run the editor")?;
 
     Ok(())
 }

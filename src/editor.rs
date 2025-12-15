@@ -19,12 +19,12 @@ struct Position {
 }
 
 impl Editor {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> anyhow::Result<Self> {
+        Ok(Self {
             should_quit: false,
             pos: Position { x: 0, y: 0 },
-            view: View::new(),
-        }
+            view: View::new()?,
+        })
     }
 
     pub fn run(&mut self) -> anyhow::Result<()> {
@@ -71,8 +71,7 @@ impl Editor {
             },
             Event::Mouse(_mouse_event) => {}
             Event::Paste(_) => {}
-            // TODO: cache size of the terminal, use this event to update the size of the terminal
-            Event::Resize(_, _) => {}
+            Event::Resize(width, height) => self.view.resize(width, height),
         }
 
         Ok(())
@@ -80,7 +79,7 @@ impl Editor {
 
     fn move_point(&mut self, code: KeyCode) -> anyhow::Result<()> {
         let pos = &mut self.pos;
-        let (cols, rows) = terminal::size()?;
+        let (cols, rows) = self.view.size();
 
         // TODO: A Cursor struct to handle cursor position and size, like move saturating_left()
         match code {

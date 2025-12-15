@@ -1,15 +1,14 @@
 use anyhow::Context;
+use clap::Parser;
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, read};
 
-use crate::terminal;
-
-const NAME: &str = env!("CARGO_PKG_NAME");
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+use crate::{Cli, terminal, view::View};
 
 pub struct Editor {
     should_quit: bool,
     /// The current position of the caret in the editor.
     pos: Position,
+    view: View,
 }
 
 // TODO: move it into the terminal, because it's not editor specific
@@ -24,12 +23,14 @@ impl Editor {
         Self {
             should_quit: false,
             pos: Position { x: 0, y: 0 },
+            view: View::new(),
         }
     }
 
     pub fn run(&mut self) -> anyhow::Result<()> {
         terminal::init()?;
 
+        self.handle_args();
         self.repl().context("run the read-eval-print loop")?;
 
         terminal::terminate()
@@ -108,7 +109,7 @@ impl Editor {
         if self.should_quit {
             terminal::clear_screen()?;
         } else {
-            Self::draw_rows()?;
+            self.view.render()?;
             terminal::move_caret(self.pos.x, self.pos.y)?;
         }
 
@@ -116,33 +117,9 @@ impl Editor {
         terminal::execute()
     }
 
-    fn draw_rows() -> anyhow::Result<()> {
-        let (_, rows) = terminal::size()?;
+    fn handle_args(&mut self) {
+        let args = Cli::parse();
 
-        for row in 0..rows.saturating_sub(1) {
-            terminal::move_caret(0, row)?;
-
-            terminal::clear_line()?;
-            terminal::print("~")?;
-            if row == rows / 3 {
-                Self::draw_welcome(row)?;
-            }
-        }
-
-        Ok(())
-    }
-
-    fn draw_welcome(row: u16) -> anyhow::Result<()> {
-        let message = format!("{NAME} editor -- version {VERSION}");
-        let len = message.len();
-
-        let (col, _) = terminal::size()?;
-        let col = col as usize;
-
-        let start = col.saturating_sub(len) / 2;
-        terminal::move_caret(start as u16, row)?;
-        terminal::print(message)?;
-
-        Ok(())
+        self.view.load(args.path);
     }
 }

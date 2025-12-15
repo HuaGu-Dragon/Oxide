@@ -9,19 +9,21 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub struct Editor {
     should_quit: bool,
     /// The current position of the caret in the editor.
-    pos: Location,
+    pos: Position,
 }
 
-struct Location {
-    row: u16,
-    col: u16,
+// TODO: move it into the terminal, because it's not editor specific
+// editor need the (col, row) of the current buffer not this.
+struct Position {
+    x: u16,
+    y: u16,
 }
 
 impl Editor {
     pub fn new() -> Self {
         Self {
             should_quit: false,
-            pos: Location { row: 0, col: 0 },
+            pos: Position { x: 0, y: 0 },
         }
     }
 
@@ -77,20 +79,21 @@ impl Editor {
 
     fn move_point(&mut self, code: KeyCode) -> anyhow::Result<()> {
         let pos = &mut self.pos;
-        let (rows, cols) = terminal::size()?;
+        let (cols, rows) = terminal::size()?;
 
+        // TODO: A Cursor struct to handle cursor position and size, like move saturating_left()
         match code {
             KeyCode::Up => {
-                pos.col = pos.col.saturating_sub(1);
+                pos.y = pos.y.saturating_sub(1);
             }
             KeyCode::Down => {
-                pos.col = pos.col.saturating_add(1).min(cols.saturating_sub(1));
+                pos.y = pos.y.saturating_add(1).min(rows.saturating_sub(1));
             }
             KeyCode::Left => {
-                pos.row = pos.row.saturating_sub(1);
+                pos.x = pos.x.saturating_sub(1);
             }
             KeyCode::Right => {
-                pos.row = pos.row.saturating_add(1).min(rows.saturating_sub(1));
+                pos.x = pos.x.saturating_add(1).min(cols.saturating_sub(1));
             }
             _ => {}
         }
@@ -106,7 +109,7 @@ impl Editor {
             terminal::clear_screen()?;
         } else {
             Self::draw_rows()?;
-            terminal::move_caret(self.pos.row, self.pos.col)?;
+            terminal::move_caret(self.pos.x, self.pos.y)?;
         }
 
         terminal::show_caret()?;

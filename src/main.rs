@@ -11,7 +11,7 @@ mod view;
 
 #[derive(Parser)]
 pub struct Cli {
-    path: PathBuf,
+    path: Option<PathBuf>,
 }
 
 fn main() -> anyhow::Result<()> {

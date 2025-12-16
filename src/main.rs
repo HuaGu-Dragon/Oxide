@@ -6,7 +6,6 @@ use crate::editor::Editor;
 
 mod editor;
 mod terminal;
-mod view;
 
 #[derive(Parser)]
 pub struct Cli {

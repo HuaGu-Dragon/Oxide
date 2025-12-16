@@ -1,23 +1,22 @@
 use std::{ops::Deref, path::PathBuf};
 
+use crate::editor::view::line::Line;
+
+#[derive(Default)]
 pub struct Buffer {
-    lines: Vec<String>,
+    lines: Vec<Line>,
 }
 
 impl Buffer {
-    pub fn new() -> Self {
-        Self { lines: Vec::new() }
-    }
-
     pub fn load(&mut self, path: PathBuf) {
         if let Ok(contents) = std::fs::read_to_string(&path) {
-            self.lines = contents.lines().map(String::from).collect();
+            self.lines = contents.lines().map(Line::from).collect();
         }
     }
 }
 
 impl Deref for Buffer {
-    type Target = Vec<String>;
+    type Target = Vec<Line>;
 
     fn deref(&self) -> &Self::Target {
         self.lines.as_ref()

@@ -58,13 +58,12 @@ impl Editor {
     }
 
     fn evalute_event(&mut self, event: Event) {
-        match Command::try_from(event) {
-            Ok(event) => match event {
+        if let Ok(event) = Command::try_from(event) {
+            match event {
                 Command::Move(direction) => self.view.move_point(direction),
                 Command::Resize(width, height) => self.view.resize(width, height),
                 Command::Quit => self.should_quit = true,
-            },
-            Err(_) => {}
+            }
         }
     }
 
@@ -74,7 +73,6 @@ impl Editor {
         self.view.render();
 
         let (col, row) = self.view.cursor_pos();
-        let (col, row) = (col as u16, row as u16);
         let _ = terminal::move_caret(col, row);
         let _ = terminal::show_caret();
         let _ = terminal::execute();

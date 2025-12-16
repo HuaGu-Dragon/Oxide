@@ -1,4 +1,5 @@
-use anyhow::Context;
+use std::panic;
+
 use clap::Parser;
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, read};
 
@@ -20,36 +21,45 @@ struct Position {
 
 impl Editor {
     pub fn new() -> anyhow::Result<Self> {
+        let current_hook = panic::take_hook();
+
+        panic::set_hook(Box::new(move |panic_info| {
+            let _ = terminal::terminate();
+            current_hook(panic_info);
+        }));
+        terminal::init()?;
+        let args = Cli::parse();
+
+        let mut view = View::new()?;
+        view.load(args.path);
+
         Ok(Self {
             should_quit: false,
             pos: Position { x: 0, y: 0 },
-            view: View::new()?,
+            view,
         })
     }
 
-    pub fn run(&mut self) -> anyhow::Result<()> {
-        terminal::init()?;
-
-        self.handle_args();
-        self.repl().context("run the read-eval-print loop")?;
-
-        terminal::terminate()
-    }
-
-    fn repl(&mut self) -> anyhow::Result<()> {
+    pub fn run(&mut self) {
         loop {
-            self.refresh_screen().context("refresh screen")?;
+            self.refresh_screen();
             if self.should_quit {
-                break Ok(());
+                break;
             }
 
-            let event = read().context("read input")?;
-
-            self.evalute_event(event).context("evalute input event")?;
+            match read() {
+                Ok(event) => self.evalute_event(event),
+                Err(err) => {
+                    #[cfg(debug_assertions)]
+                    {
+                        panic!("Could not read event: {err:?}")
+                    }
+                }
+            }
         }
     }
 
-    fn evalute_event(&mut self, event: Event) -> anyhow::Result<()> {
+    fn evalute_event(&mut self, event: Event) {
         match event {
             Event::FocusGained => {}
             Event::FocusLost => {}
@@ -66,18 +76,16 @@ impl Editor {
                     code: KeyCode::Up | KeyCode::Down | KeyCode::Left | KeyCode::Right,
                     kind: KeyEventKind::Press,
                     ..
-                } => self.move_point(key_event.code)?,
+                } => self.move_point(key_event.code),
                 _ => {}
             },
             Event::Mouse(_mouse_event) => {}
             Event::Paste(_) => {}
             Event::Resize(width, height) => self.view.resize(width, height),
         }
-
-        Ok(())
     }
 
-    fn move_point(&mut self, code: KeyCode) -> anyhow::Result<()> {
+    fn move_point(&mut self, code: KeyCode) {
         let pos = &mut self.pos;
         let (cols, rows) = self.view.size();
 
@@ -97,28 +105,24 @@ impl Editor {
             }
             _ => {}
         }
-
-        Ok(())
     }
 
-    fn refresh_screen(&mut self) -> anyhow::Result<()> {
-        terminal::hide_caret()?;
-        terminal::move_caret(0, 0)?;
+    fn refresh_screen(&mut self) {
+        let _ = terminal::hide_caret();
 
+        self.view.render();
+
+        let _ = terminal::move_caret(self.pos.x, self.pos.y);
+        let _ = terminal::show_caret();
+        let _ = terminal::execute();
+    }
+}
+
+impl Drop for Editor {
+    fn drop(&mut self) {
+        let _ = terminal::terminate();
         if self.should_quit {
-            terminal::clear_screen()?;
-        } else {
-            self.view.render()?;
-            terminal::move_caret(self.pos.x, self.pos.y)?;
+            println!("Goodbye");
         }
-
-        terminal::show_caret()?;
-        terminal::execute()
-    }
-
-    fn handle_args(&mut self) {
-        let args = Cli::parse();
-
-        self.view.load(args.path);
     }
 }

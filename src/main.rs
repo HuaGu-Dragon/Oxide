@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use anyhow::Context;
 use clap::Parser;
 
 use crate::editor::Editor;
@@ -14,8 +13,6 @@ pub struct Cli {
     path: Option<PathBuf>,
 }
 
-fn main() -> anyhow::Result<()> {
-    Editor::new()?.run().context("run the editor")?;
-
-    Ok(())
+fn main() {
+    Editor::new().unwrap().run()
 }

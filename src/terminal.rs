@@ -8,18 +8,32 @@ use crossterm::{
     cursor::{self, Hide},
     queue,
     style::Print,
-    terminal::{self, disable_raw_mode, enable_raw_mode},
+    terminal,
 };
 
 pub fn init() -> anyhow::Result<()> {
-    enable_raw_mode().context("enable raw mode in terminal")?;
+    terminal::enable_raw_mode().context("enable raw mode in terminal")?;
+
+    enter_alternate()?;
+
     clear_screen()?;
-    move_caret(0, 0)
+    execute()
 }
 
 pub fn terminate() -> anyhow::Result<()> {
+    exit_alternate()?;
+    show_caret()?;
+
     execute()?;
-    disable_raw_mode().context("disable raw mode in terminal")
+    terminal::disable_raw_mode().context("disable raw mode in terminal")
+}
+
+fn enter_alternate() -> anyhow::Result<()> {
+    queue!(stdout(), terminal::EnterAlternateScreen).context("enter alternate screen")
+}
+
+fn exit_alternate() -> anyhow::Result<()> {
+    queue!(stdout(), terminal::LeaveAlternateScreen).context("exit alternate screen")
 }
 
 pub fn clear_screen() -> anyhow::Result<()> {
@@ -50,6 +64,15 @@ pub fn show_caret() -> anyhow::Result<()> {
 
 pub fn print(text: impl Display) -> anyhow::Result<()> {
     queue!(stdout(), Print(&text)).with_context(|| format!("print `{text}` into terminal"))
+}
+
+pub fn print_at(col: u16, row: u16, clear: bool, text: impl Display) -> anyhow::Result<()> {
+    move_caret(col, row)?;
+    if clear {
+        clear_line()?;
+    }
+
+    print(text)
 }
 
 pub fn execute() -> anyhow::Result<()> {

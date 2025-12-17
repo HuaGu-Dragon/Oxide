@@ -16,7 +16,7 @@ impl Cursor {
         &self.at
     }
 
-    pub fn at_mut(&mut self) -> &mut Location {
-        &mut self.at
+    pub fn set_pos(&mut self, x: usize, y: usize) {
+        self.at.set_pos(x, y);
     }
 }

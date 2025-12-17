@@ -107,13 +107,37 @@ impl View {
     }
 
     pub fn move_point(&mut self, direction: Direction) {
-        let (x, y) = self.cursor.at_mut().pos_mut();
+        let (mut x, mut y) = self.cursor.at().pos();
         match direction {
-            Direction::Up => *y = y.saturating_sub(1),
-            Direction::Down => *y = y.saturating_add(1),
-            Direction::Left => *x = x.saturating_sub(1),
-            Direction::Right => *x = x.saturating_add(1),
+            Direction::Up => y = y.saturating_sub(1),
+            Direction::Down => y = y.saturating_add(1),
+            Direction::Left => {
+                if x > 0 {
+                    x -= 1;
+                } else if y > 0 {
+                    y -= 1;
+                    x = self.buffer.get(y).map_or(0, |line| line.len());
+                }
+            }
+            Direction::Right => {
+                let width = self.buffer.get(y).map_or(0, |line| line.len());
+                if x < width {
+                    x += 1;
+                } else {
+                    y = y.saturating_add(1);
+                    x = 0;
+                }
+            }
         }
+
+        x = self
+            .buffer
+            .get(y)
+            .map_or(0, |line| std::cmp::min(x, line.len()));
+
+        y = std::cmp::min(y, self.buffer.len());
+
+        self.cursor.set_pos(x, y);
 
         self.scroll_location();
     }
@@ -126,7 +150,7 @@ impl View {
         let (cols, rows) = self.size();
         let (left, top) = self.offset.pos();
 
-        for row in 0..rows.saturating_sub(1) {
+        for row in 0..rows {
             if let Some(text) = self.buffer.get(top.saturating_add(row as usize)) {
                 let right = left.saturating_add(cols as usize);
                 Self::render_line(row, text.get(left..right));

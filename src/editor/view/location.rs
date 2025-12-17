@@ -22,4 +22,9 @@ impl Location {
         let row = self.row.saturating_sub(other.row);
         (col as u16, row as u16)
     }
+
+    pub(crate) fn set_pos(&mut self, x: usize, y: usize) {
+        self.col = x;
+        self.row = y
+    }
 }

@@ -33,12 +33,14 @@ pub fn init() -> anyhow::Result<()> {
     terminal::enable_raw_mode().context("enable raw mode in terminal")?;
 
     enter_alternate()?;
+    set_cursor_style(cursor::SetCursorStyle::SteadyBlock)?;
 
     clear_screen()?;
     execute()
 }
 
 pub fn terminate() -> anyhow::Result<()> {
+    set_cursor_style(cursor::SetCursorStyle::DefaultUserShape)?;
     exit_alternate()?;
     show_caret()?;
 
@@ -60,6 +62,10 @@ pub fn clear_screen() -> anyhow::Result<()> {
 
 pub fn clear_line() -> anyhow::Result<()> {
     queue!(stdout(), terminal::Clear(terminal::ClearType::CurrentLine)).context("clear line")
+}
+
+pub fn set_cursor_style(style: cursor::SetCursorStyle) -> anyhow::Result<()> {
+    queue!(stdout(), style).context("set cursor style")
 }
 
 /// Get the terminal's size (cols, rows)

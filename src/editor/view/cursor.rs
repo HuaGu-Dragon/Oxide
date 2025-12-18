@@ -1,4 +1,8 @@
-use crate::editor::view::location::Location;
+#[derive(Clone, Copy, Default)]
+pub struct Location {
+    pub grapheme_index: usize,
+    pub line_index: usize,
+}
 
 #[derive(Default)]
 pub struct Cursor {
@@ -12,11 +16,11 @@ impl Cursor {
     //     }
     // }
 
-    pub fn at(&self) -> &Location {
-        &self.at
+    pub fn location(&self) -> Location {
+        self.at
     }
 
-    pub fn set_pos(&mut self, x: usize, y: usize) {
-        self.at.set_pos(x, y);
+    pub fn location_mut(&mut self) -> &mut Location {
+        &mut self.at
     }
 }

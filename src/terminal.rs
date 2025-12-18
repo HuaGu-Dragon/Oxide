@@ -11,6 +11,24 @@ use crossterm::{
     terminal,
 };
 
+#[derive(Clone, Copy, Default)]
+pub struct Position {
+    pub col: usize,
+    pub row: usize,
+}
+
+impl Position {
+    pub fn subtract(&self, offset: &Position) -> (u16, u16) {
+        let x = self.col.saturating_sub(offset.col) as u16;
+        let y = self.row.saturating_sub(offset.row) as u16;
+        (x, y)
+    }
+
+    pub fn pos(&self) -> (usize, usize) {
+        (self.col, self.row)
+    }
+}
+
 pub fn init() -> anyhow::Result<()> {
     terminal::enable_raw_mode().context("enable raw mode in terminal")?;
 

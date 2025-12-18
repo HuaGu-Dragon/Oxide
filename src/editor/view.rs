@@ -3,15 +3,14 @@ use std::{fmt::Display, path::PathBuf};
 use crate::{
     editor::{
         command::Direction,
-        view::{buffer::Buffer, cursor::Cursor, location::Location},
+        view::{buffer::Buffer, cursor::Cursor},
     },
-    terminal,
+    terminal::{self, Position},
 };
 
 mod buffer;
 mod cursor;
 mod line;
-mod location;
 
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -21,7 +20,7 @@ pub struct View {
     render: bool,
     buffer: Buffer,
     cursor: Cursor,
-    offset: Location,
+    offset: Position,
     size: Size,
 }
 
@@ -75,29 +74,41 @@ impl View {
         self.render = true;
     }
 
-    fn scroll_location(&mut self) {
-        let (x, y) = self.cursor.at().pos();
-        let (width, height) = self.size();
-        let (x_offset, y_offset) = self.offset.pos_mut();
-        let mut offset_change = false;
+    fn scroll_vertically(&mut self, to: usize) {
+        let (_, height) = self.size();
+        let offset_changed = if to < self.offset.row {
+            self.offset.row = to;
+            true
+        } else if to >= self.offset.row.saturating_add(height as usize) {
+            self.offset.row = to.saturating_sub(height as usize).saturating_add(1);
+            true
+        } else {
+            false
+        };
 
-        if y < *y_offset {
-            *y_offset = y;
-            offset_change = true;
-        } else if y >= y_offset.saturating_add(height as usize) {
-            *y_offset = y.saturating_sub(height.saturating_sub(1) as usize);
-            offset_change = true;
-        }
+        self.render |= offset_changed;
+    }
 
-        if x < *x_offset {
-            *x_offset = x;
-            offset_change = true;
-        } else if x >= x_offset.saturating_add(width as usize) {
-            *x_offset = x.saturating_sub(width.saturating_sub(1) as usize);
-            offset_change = true;
-        }
+    fn scroll_horizontally(&mut self, to: usize) {
+        let (width, _) = self.size();
+        let offset_changed = if to < self.offset.col {
+            self.offset.col = to;
+            true
+        } else if to >= self.offset.col.saturating_add(width as usize) {
+            self.offset.col = to.saturating_sub(width as usize).saturating_add(1);
+            true
+        } else {
+            false
+        };
 
-        self.render = offset_change;
+        self.render |= offset_changed;
+    }
+
+    fn scroll_buffer(&mut self) {
+        let Position { col, row } = self.caret_position();
+
+        self.scroll_horizontally(col);
+        self.scroll_vertically(row);
     }
 
     // TODO: maybe (x, y) is better?
@@ -107,43 +118,73 @@ impl View {
     }
 
     pub fn move_point(&mut self, direction: Direction) {
-        let (mut x, mut y) = self.cursor.at().pos();
         match direction {
-            Direction::Up => y = y.saturating_sub(1),
-            Direction::Down => y = y.saturating_add(1),
-            Direction::Left => {
-                if x > 0 {
-                    x -= 1;
-                } else if y > 0 {
-                    y -= 1;
-                    x = self.buffer.get(y).map_or(0, |line| line.len());
-                }
-            }
-            Direction::Right => {
-                let width = self.buffer.get(y).map_or(0, |line| line.len());
-                if x < width {
-                    x += 1;
-                } else {
-                    y = y.saturating_add(1);
-                    x = 0;
-                }
-            }
+            Direction::Up => self.move_up(1),
+            Direction::Down => self.move_down(1),
+            Direction::Left => self.move_left(),
+            Direction::Right => self.move_right(),
         }
-
-        x = self
-            .buffer
-            .get(y)
-            .map_or(0, |line| std::cmp::min(x, line.len()));
-
-        y = std::cmp::min(y, self.buffer.len());
-
-        self.cursor.set_pos(x, y);
-
-        self.scroll_location();
+        self.scroll_buffer();
     }
 
-    pub fn cursor_pos(&self) -> (u16, u16) {
-        self.cursor.at().subtract(&self.offset)
+    fn move_up(&mut self, step: usize) {
+        self.cursor.location_mut().line_index =
+            self.cursor.location().line_index.saturating_sub(step);
+        self.snap_to_valid_grapheme();
+    }
+
+    fn move_down(&mut self, step: usize) {
+        self.cursor.location_mut().line_index =
+            self.cursor.location().line_index.saturating_add(step);
+        self.snap_to_valid_grapheme();
+        self.snap_to_valid_line();
+    }
+
+    fn move_left(&mut self) {
+        if self.cursor.location().grapheme_index > 0 {
+            self.cursor.location_mut().grapheme_index -= 1;
+        } else if self.cursor.location().line_index > 0 {
+            self.move_up(1);
+            self.move_to_end_of_line();
+        }
+    }
+
+    fn move_right(&mut self) {
+        let line_width = self
+            .buffer
+            .get(self.cursor.location().line_index)
+            .map_or(0, |line| line.grapheme_count());
+        if self.cursor.location().grapheme_index < line_width {
+            self.cursor.location_mut().grapheme_index += 1;
+        } else {
+            self.move_down(1);
+            self.move_to_start_of_line();
+        }
+    }
+
+    fn move_to_start_of_line(&mut self) {
+        self.cursor.location_mut().grapheme_index = 0;
+    }
+
+    fn move_to_end_of_line(&mut self) {
+        self.cursor.location_mut().grapheme_index = self
+            .buffer
+            .get(self.cursor.location().line_index)
+            .map_or(0, |line| line.grapheme_count())
+    }
+
+    fn snap_to_valid_grapheme(&mut self) {
+        self.cursor.location_mut().grapheme_index = self
+            .buffer
+            .get(self.cursor.location().line_index)
+            .map_or(0, |line| {
+                std::cmp::min(line.grapheme_count(), self.cursor.location().grapheme_index)
+            });
+    }
+
+    fn snap_to_valid_line(&mut self) {
+        self.cursor.location_mut().line_index =
+            std::cmp::min(self.cursor.location().line_index, self.buffer.len());
     }
 
     fn render_buffer(&self) {
@@ -153,7 +194,7 @@ impl View {
         for row in 0..rows {
             if let Some(text) = self.buffer.get(top.saturating_add(row as usize)) {
                 let right = left.saturating_add(cols as usize);
-                Self::render_line(row, text.get(left..right));
+                Self::render_line(row, text.get_visable_graphemes(left..right));
             } else {
                 Self::render_line(row, "~");
             }
@@ -183,5 +224,19 @@ impl View {
         let result = terminal::print_at(start as u16, row, true, message);
 
         debug_assert!(result.is_ok())
+    }
+
+    fn caret_position(&self) -> Position {
+        let cursor = self.cursor.location();
+        let row = cursor.line_index;
+        let col = self
+            .buffer
+            .get(row)
+            .map_or(0, |line| line.width_until(cursor.grapheme_index));
+        Position { col, row }
+    }
+
+    pub fn cursor_pos(&self) -> (u16, u16) {
+        self.caret_position().subtract(&self.offset)
     }
 }

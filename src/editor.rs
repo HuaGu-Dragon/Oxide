@@ -47,10 +47,10 @@ impl Editor {
 
             match read() {
                 Ok(event) => self.evalute_event(event),
-                Err(err) => {
+                Err(_err) => {
                     #[cfg(debug_assertions)]
                     {
-                        panic!("Could not read event: {err:?}")
+                        panic!("Could not read event: {_err:?}")
                     }
                 }
             }
@@ -73,6 +73,7 @@ impl Editor {
         self.view.render();
 
         let (col, row) = self.view.cursor_pos();
+
         let _ = terminal::move_caret(col, row);
         let _ = terminal::show_caret();
         let _ = terminal::execute();

@@ -18,6 +18,7 @@ pub enum Command {
     Delete,
     Backspace,
     Enter,
+    Save,
 }
 
 impl TryFrom<Event> for Command {
@@ -34,6 +35,7 @@ impl TryFrom<Event> for Command {
                 ..
             }) => match (code, modifiers) {
                 (KeyCode::Char('q'), KeyModifiers::CONTROL) => Ok(Self::Quit),
+                (KeyCode::Char('s'), KeyModifiers::CONTROL) => Ok(Self::Save),
                 (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => Ok(Self::Insert(c)),
                 (KeyCode::Tab, _) => Ok(Self::Insert('\t')),
                 (KeyCode::Enter, _) => Ok(Self::Enter),

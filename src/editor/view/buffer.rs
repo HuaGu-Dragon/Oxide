@@ -1,9 +1,12 @@
-use std::{ops::Deref, path::PathBuf};
+use std::{io::Write, ops::Deref, path::PathBuf};
+
+use anyhow::Context;
 
 use crate::editor::view::line::Line;
 
 #[derive(Default)]
 pub struct Buffer {
+    file: Option<PathBuf>,
     lines: Vec<Line>,
 }
 
@@ -11,6 +14,7 @@ impl Buffer {
     pub fn load(&mut self, path: PathBuf) {
         if let Ok(contents) = std::fs::read_to_string(&path) {
             self.lines = contents.lines().map(Line::from).collect();
+            self.file = Some(path)
         }
     }
 
@@ -46,6 +50,16 @@ impl Buffer {
             self.lines
                 .insert(cursor.location().line_index.saturating_add(1), new);
         }
+    }
+
+    pub fn save(&self) -> anyhow::Result<()> {
+        if let Some(file) = &self.file {
+            let mut file = std::fs::File::create(file).context("create file")?;
+            for line in self.lines.iter() {
+                writeln!(file, "{line}").context("write to file")?;
+            }
+        }
+        Ok(())
     }
 }
 

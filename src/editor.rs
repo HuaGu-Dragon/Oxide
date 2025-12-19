@@ -66,6 +66,7 @@ impl Editor {
                 Command::Enter => self.view.insert_newline(),
                 Command::Backspace => self.view.delete_backspace(),
                 Command::Delete => self.view.delete(),
+                Command::Save => self.view.save(),
                 Command::Quit => self.should_quit = true,
             }
         }

@@ -287,4 +287,8 @@ impl View {
         self.move_point(Direction::Right);
         self.render = true;
     }
+
+    pub fn save(&self) {
+        let _ = self.buffer.save();
+    }
 }

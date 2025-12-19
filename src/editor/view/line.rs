@@ -1,4 +1,7 @@
-use std::ops::{Add, Range};
+use std::{
+    fmt::Display,
+    ops::{Add, Range},
+};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -26,9 +29,20 @@ struct TextFragment {
     replacement: Option<char>,
 }
 
+#[derive(Default)]
 pub struct Line {
     fragments: Vec<TextFragment>,
     bytes: usize,
+}
+
+impl Display for Line {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for fragment in self.fragments.iter() {
+            write!(f, "{}", fragment.grapheme)?;
+        }
+
+        Ok(())
+    }
 }
 
 impl Line {
@@ -89,8 +103,50 @@ impl Line {
             res.push(c);
         }
 
-        self.fragments = str_to_fragments(&res);
         self.bytes += c.len_utf8();
+        self.fragments = str_to_fragments(&res);
+    }
+
+    pub fn delete(&mut self, grapheme_index: usize) {
+        let mut res = String::with_capacity(self.bytes);
+
+        for (index, fragment) in self.fragments.iter().enumerate() {
+            if index == grapheme_index {
+                continue;
+            }
+
+            res.push_str(&fragment.grapheme);
+        }
+
+        if let Some(value) = self.fragments.get(grapheme_index) {
+            self.bytes -= value.grapheme.len();
+        }
+        self.fragments = str_to_fragments(&res);
+    }
+
+    pub fn append(&mut self, next_line: Line) {
+        let mut concat = self.to_string();
+        concat.push_str(&next_line.to_string());
+        self.bytes += next_line.bytes;
+        self.fragments = str_to_fragments(&concat);
+    }
+
+    pub fn split(&mut self, grapheme_index: usize) -> Self {
+        if grapheme_index > self.fragments.len() {
+            return Default::default();
+        }
+
+        let remainder = self.fragments.split_off(grapheme_index);
+        let bytes = remainder
+            .iter()
+            .map(|fragment| fragment.grapheme.len())
+            .sum();
+
+        self.bytes -= bytes;
+        Self {
+            fragments: remainder,
+            bytes,
+        }
     }
 }
 
@@ -184,4 +240,13 @@ fn test_width_charactor() {
     assert_eq!(&line.get_visable_graphemes(0..1), "⋯");
     assert_eq!(&line.get_visable_graphemes(0..2), "Ａ");
     assert_eq!(&line.get_visable_graphemes(2..3), "");
+}
+
+#[test]
+fn esc_and_bell() {
+    let line = Line::from(" ");
+
+    assert_eq!(line.grapheme_count(), 3);
+    assert_eq!(line.fragments[0].grapheme.width(), 1);
+    assert_eq!(line.fragments[2].grapheme.width(), 1);
 }

@@ -3,7 +3,10 @@ use std::{fmt::Display, path::PathBuf};
 use crate::{
     editor::{
         command::Direction,
-        view::{buffer::Buffer, cursor::Cursor},
+        view::{
+            buffer::Buffer,
+            cursor::{Cursor, Location},
+        },
     },
     terminal::{self, Position},
 };
@@ -255,9 +258,33 @@ impl View {
 
         let detla = new_len.saturating_sub(old_len);
         if detla > 0 {
-            self.move_right();
+            self.move_point(Direction::Right);
         }
 
+        self.render = true;
+    }
+
+    pub fn delete(&mut self) {
+        self.buffer.delete(&self.cursor);
+        self.render = true;
+    }
+
+    pub fn delete_backspace(&mut self) {
+        if !matches!(
+            self.cursor.location(),
+            Location {
+                line_index: 0,
+                grapheme_index: 0,
+            }
+        ) {
+            self.move_point(Direction::Left);
+            self.delete();
+        }
+    }
+
+    pub fn insert_newline(&mut self) {
+        self.buffer.insert_newline(&self.cursor);
+        self.move_point(Direction::Right);
         self.render = true;
     }
 }

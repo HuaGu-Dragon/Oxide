@@ -63,6 +63,9 @@ impl Editor {
                 Command::Move(direction) => self.view.move_point(direction),
                 Command::Resize(width, height) => self.view.resize(width, height),
                 Command::Insert(c) => self.view.insert_char(c),
+                Command::Enter => self.view.insert_newline(),
+                Command::Backspace => self.view.delete_backspace(),
+                Command::Delete => self.view.delete(),
                 Command::Quit => self.should_quit = true,
             }
         }

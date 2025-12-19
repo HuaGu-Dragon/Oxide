@@ -15,6 +15,9 @@ pub enum Command {
     Resize(u16, u16),
     Quit,
     Insert(char),
+    Delete,
+    Backspace,
+    Enter,
 }
 
 impl TryFrom<Event> for Command {
@@ -31,11 +34,15 @@ impl TryFrom<Event> for Command {
                 ..
             }) => match (code, modifiers) {
                 (KeyCode::Char('q'), KeyModifiers::CONTROL) => Ok(Self::Quit),
+                (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => Ok(Self::Insert(c)),
+                (KeyCode::Tab, _) => Ok(Self::Insert('\t')),
+                (KeyCode::Enter, _) => Ok(Self::Enter),
+                (KeyCode::Backspace, _) => Ok(Self::Backspace),
+                (KeyCode::Delete, _) => Ok(Self::Delete),
                 (KeyCode::Up, _) => Ok(Self::Move(Direction::Up)),
                 (KeyCode::Down, _) => Ok(Self::Move(Direction::Down)),
                 (KeyCode::Left, _) => Ok(Self::Move(Direction::Left)),
                 (KeyCode::Right, _) => Ok(Self::Move(Direction::Right)),
-                (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => Ok(Self::Insert(c)),
                 _ => Err(anyhow!("Not yet implement")),
             },
             Event::Mouse(_mouse_event) => Err(anyhow!("Not yet implement")),

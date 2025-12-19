@@ -28,6 +28,7 @@ struct TextFragment {
 
 pub struct Line {
     fragments: Vec<TextFragment>,
+    bytes: usize,
 }
 
 impl Line {
@@ -72,6 +73,25 @@ impl Line {
             })
             .sum()
     }
+
+    pub fn insert_char(&mut self, c: char, grapheme_index: usize) {
+        let mut res = String::with_capacity(self.bytes + c.len_utf8());
+
+        for (index, fragment) in self.fragments.iter().enumerate() {
+            if index == grapheme_index {
+                res.push(c);
+            }
+
+            res.push_str(&fragment.grapheme);
+        }
+
+        if grapheme_index >= self.fragments.len() {
+            res.push(c);
+        }
+
+        self.fragments = str_to_fragments(&res);
+        self.bytes += c.len_utf8();
+    }
 }
 
 fn replace_charactor(grapheme: &str) -> Option<char> {
@@ -94,37 +114,48 @@ fn replace_charactor(grapheme: &str) -> Option<char> {
     }
 }
 
+fn str_to_fragments(value: &str) -> Vec<TextFragment> {
+    value
+        .graphemes(true)
+        .map(|grapheme| {
+            let (rendered_width, replacement) = replace_charactor(grapheme).map_or_else(
+                || {
+                    let unicode_width = grapheme.width();
+                    let rendered_width = match unicode_width {
+                        0 | 1 => GraphemeWidth::Half,
+                        _ => GraphemeWidth::Full,
+                    };
+                    (rendered_width, None)
+                },
+                |replacement| (GraphemeWidth::Half, Some(replacement)),
+            );
+
+            TextFragment {
+                grapheme: grapheme.to_string(),
+                rendered_width,
+                replacement,
+            }
+        })
+        .collect()
+}
+
 impl From<String> for Line {
     fn from(value: String) -> Self {
         Self::from(&value[..])
     }
 }
 
+impl From<char> for Line {
+    fn from(value: char) -> Self {
+        Self::from(value.to_string())
+    }
+}
+
 impl From<&str> for Line {
     fn from(value: &str) -> Self {
-        Line {
-            fragments: value
-                .graphemes(true)
-                .map(|grapheme| {
-                    let (rendered_width, replacement) = replace_charactor(grapheme).map_or_else(
-                        || {
-                            let unicode_width = grapheme.width();
-                            let rendered_width = match unicode_width {
-                                0 | 1 => GraphemeWidth::Half,
-                                _ => GraphemeWidth::Full,
-                            };
-                            (rendered_width, None)
-                        },
-                        |replacement| (GraphemeWidth::Half, Some(replacement)),
-                    );
-
-                    TextFragment {
-                        grapheme: grapheme.to_string(),
-                        rendered_width,
-                        replacement,
-                    }
-                })
-                .collect(),
+        Self {
+            fragments: str_to_fragments(value),
+            bytes: value.len(),
         }
     }
 }

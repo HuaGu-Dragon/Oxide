@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{Ok, anyhow};
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -14,6 +14,7 @@ pub enum Command {
     Move(Direction),
     Resize(u16, u16),
     Quit,
+    Insert(char),
 }
 
 impl TryFrom<Event> for Command {
@@ -34,6 +35,7 @@ impl TryFrom<Event> for Command {
                 (KeyCode::Down, _) => Ok(Self::Move(Direction::Down)),
                 (KeyCode::Left, _) => Ok(Self::Move(Direction::Left)),
                 (KeyCode::Right, _) => Ok(Self::Move(Direction::Right)),
+                (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => Ok(Self::Insert(c)),
                 _ => Err(anyhow!("Not yet implement")),
             },
             Event::Mouse(_mouse_event) => Err(anyhow!("Not yet implement")),

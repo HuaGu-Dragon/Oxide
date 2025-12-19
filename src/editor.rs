@@ -62,6 +62,7 @@ impl Editor {
             match event {
                 Command::Move(direction) => self.view.move_point(direction),
                 Command::Resize(width, height) => self.view.resize(width, height),
+                Command::Insert(c) => self.view.insert_char(c),
                 Command::Quit => self.should_quit = true,
             }
         }

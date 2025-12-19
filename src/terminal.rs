@@ -1,11 +1,11 @@
 use std::{
     fmt::Display,
-    io::{Write, stdout},
+    io::{stdout, Write},
 };
 
 use anyhow::Context;
 use crossterm::{
-    cursor::{self, Hide},
+    cursor,
     queue,
     style::Print,
     terminal,
@@ -79,7 +79,7 @@ pub fn move_caret(col: u16, row: u16) -> anyhow::Result<()> {
 }
 
 pub fn hide_caret() -> anyhow::Result<()> {
-    queue!(stdout(), Hide).context("hide the cursor")
+    queue!(stdout(), cursor::Hide).context("hide the cursor")
 }
 
 pub fn show_caret() -> anyhow::Result<()> {

@@ -239,4 +239,25 @@ impl View {
     pub fn cursor_pos(&self) -> (u16, u16) {
         self.caret_position().subtract(&self.offset)
     }
+
+    pub fn insert_char(&mut self, c: char) {
+        let old_len = self
+            .buffer
+            .get(self.cursor.location().line_index)
+            .map_or(0, |line| line.grapheme_count());
+
+        self.buffer.insert_char(c, &self.cursor);
+
+        let new_len = self
+            .buffer
+            .get(self.cursor.location().line_index)
+            .map_or(0, |line| line.grapheme_count());
+
+        let detla = new_len.saturating_sub(old_len);
+        if detla > 0 {
+            self.move_right();
+        }
+
+        self.render = true;
+    }
 }

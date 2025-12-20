@@ -1,0 +1,47 @@
+use crate::{editor::DocumentStatus, terminal};
+
+pub struct StatusBar {
+    status: DocumentStatus,
+    render: bool,
+    margin_bottom: u16,
+    width: u16,
+    position_y: u16,
+}
+
+impl StatusBar {
+    pub fn new(margin_bottom: u16) -> Self {
+        let (width, height) = terminal::size().unwrap_or_default();
+        Self {
+            status: DocumentStatus::default(),
+            render: true,
+            margin_bottom,
+            width,
+            position_y: height.saturating_sub(margin_bottom).saturating_sub(1),
+        }
+    }
+
+    pub fn resize(&mut self, width: u16, height: u16) {
+        self.width = width;
+        self.position_y = height.saturating_sub(self.margin_bottom).saturating_sub(1);
+        self.render = true;
+    }
+
+    pub fn update_status(&mut self, status: DocumentStatus) {
+        if self.status != status {
+            self.status = status;
+            self.render = true;
+        }
+    }
+
+    pub fn render(&mut self) {
+        if !self.render {
+            return;
+        }
+
+        self.render = false;
+        let mut status = format!("status: {:?}", self.status);
+        status.truncate(self.width as usize);
+        let res = terminal::print_at(0, self.position_y, true, status);
+        debug_assert!(res.is_ok());
+    }
+}

@@ -2,6 +2,7 @@ use std::{fmt::Display, path::PathBuf};
 
 use crate::{
     editor::{
+        DocumentStatus,
         command::Direction,
         view::{
             buffer::Buffer,
@@ -25,6 +26,7 @@ pub struct View {
     cursor: Cursor,
     offset: Position,
     size: Size,
+    margin_bottom: u16,
 }
 
 #[derive(Default)]
@@ -34,14 +36,15 @@ struct Size {
 }
 
 impl View {
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn new(margin_bottom: u16) -> anyhow::Result<Self> {
         let (cols, rows) = terminal::size()?;
         Ok(Self {
             render: true,
             size: Size {
                 width: cols,
-                height: rows,
+                height: rows.saturating_sub(margin_bottom),
             },
+            margin_bottom,
             ..Default::default()
         })
     }
@@ -50,6 +53,15 @@ impl View {
         if let Some(path) = path {
             self.buffer.load(path);
             self.render = true;
+        }
+    }
+
+    pub fn get_status(&self) -> DocumentStatus {
+        DocumentStatus {
+            total_lines: self.buffer.len(),
+            current_line: self.cursor.location().line_index,
+            modified: self.buffer.dirty,
+            file: self.buffer.file.clone(),
         }
     }
 
@@ -73,7 +85,7 @@ impl View {
 
     pub fn resize(&mut self, width: u16, height: u16) {
         self.size.width = width;
-        self.size.height = height;
+        self.size.height = height.saturating_sub(self.margin_bottom);
         self.render = true;
     }
 

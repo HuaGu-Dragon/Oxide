@@ -6,7 +6,8 @@ use crate::editor::view::line::Line;
 
 #[derive(Default)]
 pub struct Buffer {
-    file: Option<PathBuf>,
+    pub file: Option<PathBuf>,
+    pub dirty: bool,
     lines: Vec<Line>,
 }
 
@@ -20,8 +21,10 @@ impl Buffer {
 
     pub fn insert_char(&mut self, c: char, cursor: &super::cursor::Cursor) {
         if cursor.location().line_index == self.len() {
+            self.dirty = true;
             self.lines.push(Line::from(c));
         } else if let Some(line) = self.lines.get_mut(cursor.location().line_index) {
+            self.dirty = true;
             line.insert_char(c, cursor.location().grapheme_index);
         }
     }
@@ -31,12 +34,14 @@ impl Buffer {
             if cursor.location().grapheme_index >= line.grapheme_count()
                 && self.len() > cursor.location().line_index.saturating_add(1)
             {
+                self.dirty = true;
                 let next_line = self
                     .lines
                     .remove(cursor.location().line_index.saturating_add(1));
 
                 self.lines[cursor.location().line_index].append(next_line);
             } else if cursor.location().grapheme_index < line.grapheme_count() {
+                self.dirty = true;
                 self.lines[cursor.location().line_index].delete(cursor.location().grapheme_index);
             }
         }
@@ -44,8 +49,10 @@ impl Buffer {
 
     pub fn insert_newline(&mut self, cursor: &super::cursor::Cursor) {
         if cursor.location().line_index == self.len() {
-            self.lines.push(Line::default());
+            self.dirty = true;
+            self.lines.push(Line::default())
         } else if let Some(line) = self.lines.get_mut(cursor.location().line_index) {
+            self.dirty = true;
             let new = line.split(cursor.location().grapheme_index);
             self.lines
                 .insert(cursor.location().line_index.saturating_add(1), new);
@@ -58,6 +65,7 @@ impl Buffer {
             for line in self.lines.iter() {
                 writeln!(file, "{line}").context("write to file")?;
             }
+            self.dirty = false;
         }
         Ok(())
     }

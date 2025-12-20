@@ -288,7 +288,7 @@ impl View {
         self.render = true;
     }
 
-    pub fn save(&self) {
+    pub fn save(&mut self) {
         let _ = self.buffer.save();
     }
 }

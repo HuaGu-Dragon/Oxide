@@ -52,7 +52,7 @@ impl Buffer {
         }
     }
 
-    pub fn save(&self) -> anyhow::Result<()> {
+    pub fn save(&mut self) -> anyhow::Result<()> {
         if let Some(file) = &self.file {
             let mut file = std::fs::File::create(file).context("create file")?;
             for line in self.lines.iter() {

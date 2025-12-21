@@ -77,16 +77,6 @@ impl Line {
         self.fragments.len()
     }
 
-    pub fn width(&self) -> usize {
-        self.fragments
-            .iter()
-            .map(|fragnment| match fragnment.rendered_width {
-                GraphemeWidth::Half => 1,
-                GraphemeWidth::Full => 2,
-            })
-            .sum()
-    }
-
     pub fn width_until(&self, grapheme_index: usize) -> usize {
         self.fragments
             .iter()

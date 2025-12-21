@@ -1,7 +1,7 @@
-use crate::{
-    editor::{DocumentStatus, view::line::Line},
-    terminal,
-};
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
+
+use crate::{editor::DocumentStatus, terminal};
 
 pub struct StatusBar {
     status: DocumentStatus,
@@ -46,17 +46,19 @@ impl StatusBar {
         let modified_indicator = self.status.modified_indicator();
         let line_count = self.status.line_count();
 
-        let beginning = Line::from(format!(
-            "{} - {line_count} {modified_indicator}",
-            self.status.file
-        ));
+        let beginning = format!("{} - {line_count} {modified_indicator}", self.status.file);
 
         let position_indicator = self.status.position_indicator();
-        let reminder_len = (self.width as usize).saturating_sub(beginning.width());
+        let reminder_len = (self.width as usize).saturating_sub(
+            beginning
+                .graphemes(true)
+                .map(|graphme| graphme.width())
+                .sum(),
+        );
 
-        let mut status = format!("{beginning}{position_indicator:>reminder_len$}");
+        let status = format!("{beginning}{position_indicator:>reminder_len$}");
 
-        status.truncate(self.width as usize);
+        // status.truncate(self.width as usize);
         let res = terminal::print_inverted_at(0, self.position_y, true, status);
         debug_assert!(res.is_ok());
     }

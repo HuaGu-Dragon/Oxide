@@ -1,15 +1,10 @@
 use std::{
     fmt::Display,
-    io::{stdout, Write},
+    io::{Write, stdout},
 };
 
 use anyhow::Context;
-use crossterm::{
-    cursor,
-    queue,
-    style::Print,
-    terminal,
-};
+use crossterm::{cursor, queue, style::Print, terminal};
 
 #[derive(Clone, Copy, Default)]
 pub struct Position {
@@ -101,4 +96,9 @@ pub fn print_at(col: u16, row: u16, clear: bool, text: impl Display) -> anyhow::
 
 pub fn execute() -> anyhow::Result<()> {
     stdout().flush().context("flush stdout")
+}
+
+pub fn set_title(title: impl Display) -> anyhow::Result<()> {
+    queue!(stdout(), terminal::SetTitle(title)).context("set title")?;
+    Ok(())
 }

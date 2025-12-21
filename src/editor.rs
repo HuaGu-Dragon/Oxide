@@ -1,4 +1,7 @@
-use std::{panic, path::PathBuf};
+use std::{
+    panic,
+    path::{Path, PathBuf},
+};
 
 use clap::Parser;
 use crossterm::event::{Event, read};
@@ -13,6 +16,8 @@ mod command;
 mod status;
 mod view;
 
+const NAME: &str = env!("CARGO_PKG_NAME");
+
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct DocumentStatus {
     total_lines: usize,
@@ -26,6 +31,7 @@ pub struct Editor {
     /// The current position of the caret in the editor.
     view: View,
     status: StatusBar,
+    title: String,
 }
 
 impl Editor {
@@ -39,14 +45,18 @@ impl Editor {
         terminal::init()?;
         let args = Cli::parse();
 
-        let mut view = View::new(2)?;
-        view.load(args.path);
-
-        Ok(Self {
+        let mut editor = Self {
             should_quit: false,
-            view,
+            view: View::new(2)?,
             status: StatusBar::new(1),
-        })
+            title: String::new(),
+        };
+
+        editor.view.load(args.path);
+
+        editor.refresh_status();
+
+        Ok(editor)
     }
 
     pub fn run(&mut self) {
@@ -99,6 +109,23 @@ impl Editor {
         let _ = terminal::move_caret(col, row);
         let _ = terminal::show_caret();
         let _ = terminal::execute();
+    }
+
+    fn refresh_status(&mut self) {
+        let status = self.view.get_status();
+
+        let Some(title) = status
+            .file
+            .as_deref()
+            .and_then(Path::file_name)
+            .and_then(|s| s.to_str())
+        else {
+            return;
+        };
+
+        if title != self.title && terminal::set_title(format!("{} - {NAME}", title)).is_ok() {
+            self.title = title.to_string()
+        }
     }
 }
 

@@ -1,7 +1,4 @@
-use std::{
-    panic,
-    path::{Path, PathBuf},
-};
+use std::panic;
 
 use clap::Parser;
 use crossterm::event::{Event, read};
@@ -23,12 +20,11 @@ pub struct DocumentStatus {
     total_lines: usize,
     current_line: usize,
     modified: bool,
-    file: Option<PathBuf>,
+    file: String,
 }
 
 pub struct Editor {
     should_quit: bool,
-    /// The current position of the caret in the editor.
     view: View,
     status: StatusBar,
     title: String,
@@ -114,18 +110,29 @@ impl Editor {
     fn refresh_status(&mut self) {
         let status = self.view.get_status();
 
-        let Some(title) = status
-            .file
-            .as_deref()
-            .and_then(Path::file_name)
-            .and_then(|s| s.to_str())
-        else {
-            return;
-        };
+        let title = status.file;
 
         if title != self.title && terminal::set_title(format!("{} - {NAME}", title)).is_ok() {
             self.title = title.to_string()
         }
+    }
+}
+
+impl DocumentStatus {
+    pub fn modified_indicator(&self) -> &'static str {
+        if self.modified { "(modified)" } else { "" }
+    }
+
+    pub fn line_count(&self) -> String {
+        format!("{} lines", self.total_lines)
+    }
+
+    pub fn position_indicator(&self) -> String {
+        format!(
+            "{}/{}",
+            self.current_line.saturating_add(1),
+            self.total_lines
+        )
     }
 }
 

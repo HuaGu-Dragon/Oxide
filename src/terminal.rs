@@ -4,7 +4,11 @@ use std::{
 };
 
 use anyhow::Context;
-use crossterm::{cursor, queue, style::Print, terminal};
+use crossterm::{
+    cursor, queue,
+    style::{self, Print},
+    terminal,
+};
 
 #[derive(Clone, Copy, Default)]
 pub struct Position {
@@ -85,6 +89,15 @@ pub fn print(text: impl Display) -> anyhow::Result<()> {
     queue!(stdout(), Print(&text)).with_context(|| format!("print `{text}` into terminal"))
 }
 
+pub fn print_inverted(text: impl Display) -> anyhow::Result<()> {
+    print(format!(
+        "{}{}{}",
+        style::Attribute::Reverse,
+        text,
+        style::Attribute::Reset
+    ))
+}
+
 pub fn print_at(col: u16, row: u16, clear: bool, text: impl Display) -> anyhow::Result<()> {
     move_caret(col, row)?;
     if clear {
@@ -92,6 +105,19 @@ pub fn print_at(col: u16, row: u16, clear: bool, text: impl Display) -> anyhow::
     }
 
     print(text)
+}
+pub fn print_inverted_at(
+    col: u16,
+    row: u16,
+    clear: bool,
+    text: impl Display,
+) -> anyhow::Result<()> {
+    move_caret(col, row)?;
+    if clear {
+        clear_line()?;
+    }
+
+    print_inverted(text)
 }
 
 pub fn execute() -> anyhow::Result<()> {

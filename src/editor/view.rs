@@ -1,4 +1,7 @@
-use std::{fmt::Display, path::PathBuf};
+use std::{
+    fmt::Display,
+    path::{Path, PathBuf},
+};
 
 use crate::{
     editor::{
@@ -14,7 +17,7 @@ use crate::{
 
 mod buffer;
 mod cursor;
-mod line;
+pub mod line;
 
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -61,7 +64,14 @@ impl View {
             total_lines: self.buffer.len(),
             current_line: self.cursor.location().line_index,
             modified: self.buffer.dirty,
-            file: self.buffer.file.clone(),
+            file: self
+                .buffer
+                .file
+                .as_deref()
+                .and_then(Path::file_name)
+                .and_then(|s| s.to_str())
+                .map(|s| s.to_string())
+                .unwrap_or_default(),
         }
     }
 

@@ -1,4 +1,7 @@
-use crate::{editor::DocumentStatus, terminal};
+use crate::{
+    editor::{DocumentStatus, view::line::Line},
+    terminal,
+};
 
 pub struct StatusBar {
     status: DocumentStatus,
@@ -39,9 +42,22 @@ impl StatusBar {
         }
 
         self.render = false;
-        let mut status = format!("status: {:?}", self.status);
+
+        let modified_indicator = self.status.modified_indicator();
+        let line_count = self.status.line_count();
+
+        let beginning = Line::from(format!(
+            "{} - {line_count} {modified_indicator}",
+            self.status.file
+        ));
+
+        let position_indicator = self.status.position_indicator();
+        let reminder_len = (self.width as usize).saturating_sub(beginning.width());
+
+        let mut status = format!("{beginning}{position_indicator:>reminder_len$}");
+
         status.truncate(self.width as usize);
-        let res = terminal::print_at(0, self.position_y, true, status);
+        let res = terminal::print_inverted_at(0, self.position_y, true, status);
         debug_assert!(res.is_ok());
     }
 }

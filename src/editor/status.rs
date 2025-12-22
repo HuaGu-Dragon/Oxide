@@ -1,7 +1,9 @@
-use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::{editor::DocumentStatus, terminal};
+use crate::{
+    editor::{DocumentStatus, ui::UiComponent},
+    terminal,
+};
 
 pub struct StatusBar {
     status: DocumentStatus,
@@ -23,43 +25,38 @@ impl StatusBar {
         }
     }
 
-    pub fn resize(&mut self, width: u16, height: u16) {
-        self.width = width;
-        self.position_y = height.saturating_sub(self.margin_bottom).saturating_sub(1);
-        self.render = true;
-    }
-
     pub fn update_status(&mut self, status: DocumentStatus) {
         if self.status != status {
             self.status = status;
             self.render = true;
         }
     }
+}
 
-    pub fn render(&mut self) {
-        if !self.render {
-            return;
-        }
+impl UiComponent for StatusBar {
+    fn set_render(&mut self, render: bool) {
+        self.render = render;
+    }
 
-        self.render = false;
+    fn needs_render(&self) -> bool {
+        self.render
+    }
 
+    fn set_size(&mut self, width: usize, _height: usize) {
+        self.width = width as u16;
+    }
+
+    fn draw(&mut self) -> anyhow::Result<()> {
         let modified_indicator = self.status.modified_indicator();
         let line_count = self.status.line_count();
 
         let beginning = format!("{} - {line_count} {modified_indicator}", self.status.file);
-
         let position_indicator = self.status.position_indicator();
-        let reminder_len = (self.width as usize).saturating_sub(
-            beginning
-                .graphemes(true)
-                .map(|graphme| graphme.width())
-                .sum(),
-        );
+        let reminder_len = (self.width as usize).saturating_sub(beginning.width());
 
         let status = format!("{beginning}{position_indicator:>reminder_len$}");
 
         // status.truncate(self.width as usize);
-        let res = terminal::print_inverted_at(0, self.position_y, true, status);
-        debug_assert!(res.is_ok());
+        terminal::print_inverted_at(0, self.position_y, true, status)
     }
 }

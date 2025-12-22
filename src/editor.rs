@@ -5,12 +5,16 @@ use crossterm::event::{Event, read};
 
 use crate::{
     Cli,
-    editor::{command::Command, status::StatusBar, view::View},
+    editor::{
+        command::Command, message::MessageBar, status::StatusBar, ui::UiComponent, view::View,
+    },
     terminal,
 };
 
 mod command;
+mod message;
 mod status;
+mod ui;
 mod view;
 
 const NAME: &str = env!("CARGO_PKG_NAME");
@@ -27,6 +31,7 @@ pub struct Editor {
     should_quit: bool,
     view: View,
     status: StatusBar,
+    message: MessageBar,
     title: String,
 }
 
@@ -46,11 +51,13 @@ impl Editor {
             view: View::new(2)?,
             status: StatusBar::new(1),
             title: String::new(),
+            message: Default::default(),
         };
 
         editor.view.load(args.path);
 
         editor.refresh_status();
+        editor.refresh_message();
 
         Ok(editor)
     }
@@ -58,6 +65,8 @@ impl Editor {
     pub fn run(&mut self) {
         loop {
             self.refresh_screen();
+            self.refresh_status();
+            self.refresh_message();
             if self.should_quit {
                 break;
             }
@@ -82,7 +91,7 @@ impl Editor {
                 Command::Move(direction) => self.view.move_point(direction),
                 Command::Resize(width, height) => {
                     self.view.resize(width, height);
-                    self.status.resize(width, height);
+                    self.status.resize(width as usize, height as usize);
                 }
                 Command::Insert(c) => self.view.insert_char(c),
                 Command::Enter => self.view.insert_newline(),
@@ -99,6 +108,7 @@ impl Editor {
 
         self.view.render();
         self.status.render();
+        self.message.render();
 
         let (col, row) = self.view.cursor_pos();
 
@@ -115,6 +125,11 @@ impl Editor {
         if title != self.title && terminal::set_title(format!("{} - {NAME}", title)).is_ok() {
             self.title = title.to_string()
         }
+    }
+
+    fn refresh_message(&mut self) {
+        self.message
+            .update_message(String::from("HELP: Ctrl-S = save | Ctrl-Q = quit"));
     }
 }
 

@@ -7,6 +7,7 @@ use crate::{
     editor::{
         DocumentStatus,
         command::Direction,
+        ui::UiComponent,
         view::{
             buffer::Buffer,
             cursor::{Cursor, Location},
@@ -55,7 +56,7 @@ impl View {
     pub fn load(&mut self, path: Option<PathBuf>) {
         if let Some(path) = path {
             self.buffer.load(path);
-            self.render = true;
+            self.set_render(true);
         }
     }
 
@@ -71,12 +72,12 @@ impl View {
                 .and_then(Path::file_name)
                 .and_then(|s| s.to_str())
                 .map(|s| s.to_string())
-                .unwrap_or_default(),
+                .unwrap_or_else(|| String::from("[No Name]")),
         }
     }
 
     pub fn render(&mut self) {
-        if !self.render {
+        if !self.render || self.size.height == 0 {
             return;
         }
         self.render = false;
@@ -111,7 +112,7 @@ impl View {
             false
         };
 
-        self.render |= offset_changed;
+        self.set_render(self.render | offset_changed);
     }
 
     fn scroll_horizontally(&mut self, to: usize) {
@@ -126,7 +127,7 @@ impl View {
             false
         };
 
-        self.render |= offset_changed;
+        self.set_render(self.render | offset_changed);
     }
 
     fn scroll_buffer(&mut self) {
@@ -243,6 +244,9 @@ impl View {
         let len = message.len();
 
         let (col, _) = self.size();
+        if col == 0 {
+            return;
+        }
         let col = col as usize;
 
         let start = col.saturating_sub(len) / 2;
@@ -283,12 +287,12 @@ impl View {
             self.move_point(Direction::Right);
         }
 
-        self.render = true;
+        self.set_render(true);
     }
 
     pub fn delete(&mut self) {
         self.buffer.delete(&self.cursor);
-        self.render = true;
+        self.set_render(true);
     }
 
     pub fn delete_backspace(&mut self) {
@@ -307,10 +311,32 @@ impl View {
     pub fn insert_newline(&mut self) {
         self.buffer.insert_newline(&self.cursor);
         self.move_point(Direction::Right);
-        self.render = true;
+        self.set_render(true);
     }
 
     pub fn save(&mut self) {
         let _ = self.buffer.save();
+    }
+}
+
+impl UiComponent for View {
+    fn set_render(&mut self, render: bool) {
+        self.render = render;
+    }
+
+    fn needs_render(&self) -> bool {
+        self.render
+    }
+
+    fn set_size(&mut self, width: usize, height: usize) {
+        self.size = Size {
+            width: width as u16,
+            height: height as u16,
+        };
+        self.scroll_buffer();
+    }
+
+    fn draw(&mut self) -> anyhow::Result<()> {
+        todo!()
     }
 }

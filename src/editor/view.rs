@@ -76,19 +76,6 @@ impl View {
         }
     }
 
-    pub fn render(&mut self) {
-        if !self.render || self.size.height == 0 {
-            return;
-        }
-        self.render = false;
-
-        if self.buffer.is_empty() {
-            self.render_welcome();
-        } else {
-            self.render_buffer();
-        }
-    }
-
     /// (width, height)
     pub fn size(&self) -> (u16, u16) {
         (self.size.width, self.size.height)
@@ -337,6 +324,16 @@ impl UiComponent for View {
     }
 
     fn draw(&mut self) -> anyhow::Result<()> {
-        todo!()
+        if self.size.height == 0 {
+            anyhow::bail!("terminal size is zero")
+        }
+
+        if self.buffer.is_empty() {
+            self.render_welcome();
+        } else {
+            self.render_buffer();
+        }
+
+        Ok(())
     }
 }

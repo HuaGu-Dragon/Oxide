@@ -1,12 +1,14 @@
+use crate::editor::Size;
+
 pub trait UiComponent {
     fn set_render(&mut self, render: bool);
 
     fn needs_render(&self) -> bool;
 
-    fn set_size(&mut self, width: usize, height: usize);
+    fn set_size(&mut self, width: u16, height: u16);
 
-    fn resize(&mut self, width: usize, height: usize) {
-        self.set_size(width, height);
+    fn resize(&mut self, size: Size) {
+        self.set_size(size.width, size.height);
         self.set_render(true);
     }
 

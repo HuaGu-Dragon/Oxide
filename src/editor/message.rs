@@ -24,10 +24,12 @@ impl UiComponent for MessageBar {
         self.render
     }
 
-    fn set_size(&mut self, _width: usize, _height: usize) {}
-
     fn draw(&mut self) -> anyhow::Result<()> {
         let (_, rows) = terminal::size()?;
         terminal::print_at(0, rows.saturating_sub(1), true, &self.message)
+    }
+
+    fn set_size(&mut self, width: u16, height: u16) {
+        todo!()
     }
 }

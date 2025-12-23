@@ -27,12 +27,28 @@ pub struct DocumentStatus {
     file: String,
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+struct Size {
+    width: u16,
+    height: u16,
+}
+
+impl From<(u16, u16)> for Size {
+    fn from(value: (u16, u16)) -> Self {
+        Self {
+            width: value.0,
+            height: value.1,
+        }
+    }
+}
+
 pub struct Editor {
     should_quit: bool,
     view: View,
     status: StatusBar,
     message: MessageBar,
     title: String,
+    size: Size,
 }
 
 impl Editor {
@@ -45,6 +61,7 @@ impl Editor {
         }));
         terminal::init()?;
         let args = Cli::parse();
+        let size = terminal::size()?.into();
 
         let mut editor = Self {
             should_quit: false,
@@ -52,6 +69,7 @@ impl Editor {
             status: StatusBar::new(1),
             title: String::new(),
             message: Default::default(),
+            size,
         };
 
         editor.view.load(args.path);
@@ -89,10 +107,7 @@ impl Editor {
         if let Ok(event) = Command::try_from(event) {
             match event {
                 Command::Move(direction) => self.view.move_point(direction),
-                Command::Resize(width, height) => {
-                    self.view.resize(width, height);
-                    self.status.resize(width as usize, height as usize);
-                }
+                Command::Resize(size) => self.resize(size),
                 Command::Insert(c) => self.view.insert_char(c),
                 Command::Enter => self.view.insert_newline(),
                 Command::Backspace => self.view.delete_backspace(),
@@ -130,6 +145,18 @@ impl Editor {
     fn refresh_message(&mut self) {
         self.message
             .update_message(String::from("HELP: Ctrl-S = save | Ctrl-Q = quit"));
+    }
+
+    fn resize(&mut self, size: Size) {
+        self.size = size;
+        self.view.resize(Size {
+            width: size.width,
+            height: size.height.saturating_sub(2),
+        });
+        self.message.resize(Size {
+            width: size.width,
+            height: 1,
+        });
     }
 }
 

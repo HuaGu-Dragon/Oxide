@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     editor::{
-        DocumentStatus,
+        DocumentStatus, Size,
         command::Direction,
         ui::UiComponent,
         view::{
@@ -31,12 +31,6 @@ pub struct View {
     offset: Position,
     size: Size,
     margin_bottom: u16,
-}
-
-#[derive(Default)]
-struct Size {
-    width: u16,
-    height: u16,
 }
 
 impl View {
@@ -81,9 +75,9 @@ impl View {
         (self.size.width, self.size.height)
     }
 
-    pub fn resize(&mut self, width: u16, height: u16) {
-        self.size.width = width;
-        self.size.height = height.saturating_sub(self.margin_bottom);
+    pub fn resize(&mut self, size: Size) {
+        self.size.width = size.width;
+        self.size.height = size.height.saturating_sub(self.margin_bottom);
         self.render = true;
     }
 
@@ -315,7 +309,7 @@ impl UiComponent for View {
         self.render
     }
 
-    fn set_size(&mut self, width: usize, height: usize) {
+    fn set_size(&mut self, width: u16, height: u16) {
         self.size = Size {
             width: width as u16,
             height: height as u16,

@@ -42,8 +42,8 @@ impl UiComponent for StatusBar {
         self.render
     }
 
-    fn set_size(&mut self, width: usize, _height: usize) {
-        self.width = width as u16;
+    fn set_size(&mut self, width: u16, _height: u16) {
+        self.width = width;
     }
 
     fn draw(&mut self) -> anyhow::Result<()> {

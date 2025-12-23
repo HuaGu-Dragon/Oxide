@@ -1,6 +1,8 @@
 use anyhow::{Ok, anyhow};
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 
+use crate::editor::Size;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
     Up,
@@ -12,7 +14,7 @@ pub enum Direction {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
     Move(Direction),
-    Resize(u16, u16),
+    Resize(Size),
     Quit,
     Insert(char),
     Delete,
@@ -49,7 +51,7 @@ impl TryFrom<Event> for Command {
             },
             Event::Mouse(_mouse_event) => Err(anyhow!("Not yet implement")),
             Event::Paste(_) => Err(anyhow!("Not yet implement")),
-            Event::Resize(width, height) => Ok(Self::Resize(width, height)),
+            Event::Resize(width, height) => Ok(Self::Resize(Size { width, height })),
             _ => Err(anyhow!("Not yet implement")),
         }
     }

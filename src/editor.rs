@@ -79,7 +79,7 @@ impl Editor {
         loop {
             self.refresh_screen();
             self.refresh_status();
-            self.refresh_message();
+            // self.refresh_message();
             if self.should_quit {
                 break;
             }

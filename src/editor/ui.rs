@@ -12,14 +12,14 @@ pub trait UiComponent {
         self.set_render(true);
     }
 
-    fn draw(&mut self) -> anyhow::Result<()>;
+    fn draw(&mut self, y: u16) -> anyhow::Result<()>;
 
-    fn render(&mut self) {
+    fn render(&mut self, y: u16) {
         if !self.needs_render() {
             return;
         }
 
-        match self.draw() {
+        match self.draw(y) {
             Ok(()) => self.set_render(false),
             Err(_err) => {
                 #[cfg(debug_assertions)]

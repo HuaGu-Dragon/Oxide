@@ -32,6 +32,7 @@ pub fn init() -> anyhow::Result<()> {
     terminal::enable_raw_mode().context("enable raw mode in terminal")?;
 
     enter_alternate()?;
+    disable_line_wrap()?;
     set_cursor_style(cursor::SetCursorStyle::SteadyBlock)?;
 
     clear_screen()?;
@@ -41,6 +42,7 @@ pub fn init() -> anyhow::Result<()> {
 pub fn terminate() -> anyhow::Result<()> {
     set_cursor_style(cursor::SetCursorStyle::DefaultUserShape)?;
     exit_alternate()?;
+    enable_line_wrap()?;
     show_caret()?;
 
     execute()?;
@@ -61,6 +63,14 @@ pub fn clear_screen() -> anyhow::Result<()> {
 
 pub fn clear_line() -> anyhow::Result<()> {
     queue!(stdout(), terminal::Clear(terminal::ClearType::CurrentLine)).context("clear line")
+}
+
+fn enable_line_wrap() -> anyhow::Result<()> {
+    queue!(stdout(), terminal::EnableLineWrap).context("enable line wrap")
+}
+
+fn disable_line_wrap() -> anyhow::Result<()> {
+    queue!(stdout(), terminal::DisableLineWrap).context("disable line wrap")
 }
 
 pub fn set_cursor_style(style: cursor::SetCursorStyle) -> anyhow::Result<()> {

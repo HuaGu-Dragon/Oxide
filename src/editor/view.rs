@@ -30,23 +30,9 @@ pub struct View {
     cursor: Cursor,
     offset: Position,
     size: Size,
-    margin_bottom: u16,
 }
 
 impl View {
-    pub fn new(margin_bottom: u16) -> anyhow::Result<Self> {
-        let (cols, rows) = terminal::size()?;
-        Ok(Self {
-            render: true,
-            size: Size {
-                width: cols,
-                height: rows.saturating_sub(margin_bottom),
-            },
-            margin_bottom,
-            ..Default::default()
-        })
-    }
-
     pub fn load(&mut self, path: Option<PathBuf>) {
         if let Some(path) = path {
             self.buffer.load(path);
@@ -73,12 +59,6 @@ impl View {
     /// (width, height)
     pub fn size(&self) -> (u16, u16) {
         (self.size.width, self.size.height)
-    }
-
-    pub fn resize(&mut self, size: Size) {
-        self.size.width = size.width;
-        self.size.height = size.height.saturating_sub(self.margin_bottom);
-        self.render = true;
     }
 
     fn scroll_vertically(&mut self, to: usize) {
@@ -310,14 +290,11 @@ impl UiComponent for View {
     }
 
     fn set_size(&mut self, width: u16, height: u16) {
-        self.size = Size {
-            width: width as u16,
-            height: height as u16,
-        };
+        self.size = Size { width, height };
         self.scroll_buffer();
     }
 
-    fn draw(&mut self) -> anyhow::Result<()> {
+    fn draw(&mut self, _y: u16) -> anyhow::Result<()> {
         if self.size.height == 0 {
             anyhow::bail!("terminal size is zero")
         }

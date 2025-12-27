@@ -42,6 +42,7 @@ impl From<(u16, u16)> for Size {
     }
 }
 
+#[derive(Default)]
 pub struct Editor {
     should_quit: bool,
     view: View,
@@ -61,16 +62,10 @@ impl Editor {
         }));
         terminal::init()?;
         let args = Cli::parse();
-        let size = terminal::size()?.into();
+        let size: Size = terminal::size()?.into();
 
-        let mut editor = Self {
-            should_quit: false,
-            view: View::new(2)?,
-            status: StatusBar::new(1),
-            title: String::new(),
-            message: Default::default(),
-            size,
-        };
+        let mut editor = Editor::default();
+        editor.resize(size);
 
         editor.view.load(args.path);
 
@@ -119,12 +114,19 @@ impl Editor {
     }
 
     fn refresh_screen(&mut self) {
+        if self.size.height == 0 || self.size.width == 0 {
+            return;
+        }
+
         let _ = terminal::hide_caret();
 
-        self.view.render();
-        self.status.render();
-        self.message.render();
-
+        self.message.render(self.size.height.saturating_sub(1));
+        if self.size.height > 1 {
+            self.status.render(self.size.height.saturating_sub(2));
+        }
+        if self.size.height > 2 {
+            self.view.render(0);
+        }
         let (col, row) = self.view.cursor_pos();
 
         let _ = terminal::move_caret(col, row);
@@ -154,6 +156,10 @@ impl Editor {
             height: size.height.saturating_sub(2),
         });
         self.message.resize(Size {
+            width: size.width,
+            height: 1,
+        });
+        self.status.resize(Size {
             width: size.width,
             height: 1,
         });

@@ -19,6 +19,8 @@ pub enum Command {
     Insert(char),
     Delete,
     Backspace,
+    StartOfLine,
+    EndOfLine,
     Enter,
     Save,
 }
@@ -47,6 +49,8 @@ impl TryFrom<Event> for Command {
                 (KeyCode::Down, _) => Ok(Self::Move(Direction::Down)),
                 (KeyCode::Left, _) => Ok(Self::Move(Direction::Left)),
                 (KeyCode::Right, _) => Ok(Self::Move(Direction::Right)),
+                (KeyCode::Home, _) => Ok(Self::StartOfLine),
+                (KeyCode::End, _) => Ok(Self::EndOfLine),
                 _ => Err(anyhow!("Not yet implement")),
             },
             Event::Mouse(_mouse_event) => Err(anyhow!("Not yet implement")),

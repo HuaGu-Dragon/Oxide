@@ -109,6 +109,8 @@ impl Editor {
         if let Ok(event) = Command::try_from(event) {
             match event {
                 Command::Move(direction) => self.view.move_point(direction),
+                Command::StartOfLine => self.view.move_to_start_of_line(),
+                Command::EndOfLine => self.view.move_to_end_of_line(),
                 Command::Resize(size) => self.resize(size),
                 Command::Insert(c) => self.view.insert_char(c),
                 Command::Enter => self.view.insert_newline(),

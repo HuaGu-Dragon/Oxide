@@ -150,11 +150,11 @@ impl View {
         }
     }
 
-    fn move_to_start_of_line(&mut self) {
+    pub fn move_to_start_of_line(&mut self) {
         self.cursor.location_mut().grapheme_index = 0;
     }
 
-    fn move_to_end_of_line(&mut self) {
+    pub fn move_to_end_of_line(&mut self) {
         self.cursor.location_mut().grapheme_index = self
             .buffer
             .get(self.cursor.location().line_index)

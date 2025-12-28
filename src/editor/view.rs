@@ -33,11 +33,12 @@ pub struct View {
 }
 
 impl View {
-    pub fn load(&mut self, path: Option<PathBuf>) {
+    pub fn load(&mut self, path: Option<PathBuf>) -> anyhow::Result<()> {
         if let Some(path) = path {
-            self.buffer.load(path);
+            self.buffer.load(path)?;
             self.set_render(true);
         }
+        Ok(())
     }
 
     pub fn get_status(&self) -> DocumentStatus {
@@ -275,8 +276,8 @@ impl View {
         self.set_render(true);
     }
 
-    pub fn save(&mut self) {
-        let _ = self.buffer.save();
+    pub fn save(&mut self) -> anyhow::Result<()> {
+        self.buffer.save()
     }
 }
 

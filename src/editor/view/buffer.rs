@@ -12,11 +12,11 @@ pub struct Buffer {
 }
 
 impl Buffer {
-    pub fn load(&mut self, path: PathBuf) {
-        if let Ok(contents) = std::fs::read_to_string(&path) {
-            self.lines = contents.lines().map(Line::from).collect();
-            self.file = Some(path)
-        }
+    pub fn load(&mut self, path: PathBuf) -> anyhow::Result<()> {
+        let contents = std::fs::read_to_string(&path).context("read from file")?;
+        self.lines = contents.lines().map(Line::from).collect();
+        self.file = Some(path);
+        Ok(())
     }
 
     pub fn insert_char(&mut self, c: char, cursor: &super::cursor::Cursor) {

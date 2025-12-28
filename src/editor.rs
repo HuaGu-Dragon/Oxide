@@ -67,10 +67,17 @@ impl Editor {
         let mut editor = Editor::default();
         editor.resize(size);
 
-        editor.view.load(args.path);
+        if editor.view.load(args.path).is_ok() {
+            editor
+                .message
+                .update_message(String::from("HELP: Ctrl-S = save | Ctrl-Q = quit"));
+        } else {
+            editor
+                .message
+                .update_message(String::from("ERR: Could not open file"));
+        };
 
         editor.refresh_status();
-        editor.refresh_message();
 
         Ok(editor)
     }
@@ -107,8 +114,8 @@ impl Editor {
                 Command::Enter => self.view.insert_newline(),
                 Command::Backspace => self.view.delete_backspace(),
                 Command::Delete => self.view.delete(),
-                Command::Save => self.view.save(),
-                Command::Quit => self.should_quit = true,
+                Command::Save => self.handle_save(),
+                Command::Quit => self.handle_quit(),
             }
         }
     }
@@ -144,11 +151,6 @@ impl Editor {
         }
     }
 
-    fn refresh_message(&mut self) {
-        self.message
-            .update_message(String::from("HELP: Ctrl-S = save | Ctrl-Q = quit"));
-    }
-
     fn resize(&mut self, size: Size) {
         self.size = size;
         self.view.resize(Size {
@@ -163,6 +165,25 @@ impl Editor {
             width: size.width,
             height: 1,
         });
+    }
+
+    fn handle_save(&mut self) {
+        if self.view.save().is_ok() {
+            self.message
+                .update_message(String::from("File saved successfully."));
+        } else {
+            self.message
+                .update_message(String::from("Error while saving file."));
+        }
+    }
+
+    fn handle_quit(&mut self) {
+        if self.view.get_status().modified {
+            self.message
+                .update_message(String::from("Warning! File has unsaved changes."));
+        } else {
+            self.should_quit = true;
+        }
     }
 }
 

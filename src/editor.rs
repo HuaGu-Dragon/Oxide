@@ -18,6 +18,7 @@ mod ui;
 mod view;
 
 const NAME: &str = env!("CARGO_PKG_NAME");
+const QUIT_TIMES: u8 = 2;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct DocumentStatus {
@@ -50,6 +51,7 @@ pub struct Editor {
     message: MessageBar,
     title: String,
     size: Size,
+    quit_time: u8,
 }
 
 impl Editor {
@@ -107,6 +109,9 @@ impl Editor {
 
     fn evalute_event(&mut self, event: Event) {
         if let Ok(event) = Command::try_from(event) {
+            if !matches!(event, Command::Save | Command::Quit) {
+                self.reset_quit_time();
+            }
             match event {
                 Command::Move(direction) => self.view.move_point(direction),
                 Command::StartOfLine => self.view.move_to_start_of_line(),
@@ -180,12 +185,20 @@ impl Editor {
     }
 
     fn handle_quit(&mut self) {
-        if self.view.get_status().modified {
-            self.message
-                .update_message(String::from("Warning! File has unsaved changes."));
-        } else {
+        if self.quit_time + 1 >= QUIT_TIMES || !self.view.get_status().modified {
             self.should_quit = true;
+        } else {
+            self.quit_time += 1;
+            self.message.update_message(format!(
+                "WARNING! File has unsaved changes. Press Ctrl-Q {} more times to quit.",
+                QUIT_TIMES - self.quit_time
+            ));
         }
+    }
+
+    fn reset_quit_time(&mut self) {
+        self.quit_time = 0;
+        self.message.update_message(String::from(""));
     }
 }
 

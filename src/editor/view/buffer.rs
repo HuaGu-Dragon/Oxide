@@ -73,6 +73,17 @@ impl Buffer {
         }
         Ok(())
     }
+
+    pub fn save_as(&mut self, path: &str) -> Result<(), anyhow::Error> {
+        let path = PathBuf::from(path);
+        let mut file = std::fs::File::create(&path).context("create file")?;
+        for line in self.lines.iter() {
+            writeln!(file, "{line}").context("write to file")?;
+        }
+        self.file = Some(path);
+        self.dirty = false;
+        Ok(())
+    }
 }
 
 impl Deref for Buffer {

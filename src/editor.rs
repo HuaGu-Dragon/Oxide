@@ -132,9 +132,29 @@ impl Editor {
                     }
                 }
                 Command::Resize(size) => self.resize(size),
-                Command::Insert(c) => self.view.insert_char(c),
-                Command::Enter => self.view.insert_newline(),
-                Command::Backspace => self.view.delete_backspace(),
+                Command::Insert(c) => {
+                    if let Some(ref mut command) = self.command {
+                        command.handle_edit_command(event);
+                    } else {
+                        self.view.insert_char(c)
+                    }
+                }
+                Command::Enter => {
+                    if let Some(ref command) = self.command {
+                        let name = command.get_value();
+                        self.dismiss_prompt();
+                        self.save(Some(&name));
+                    } else {
+                        self.view.insert_newline()
+                    }
+                }
+                Command::Backspace => {
+                    if let Some(ref mut command) = self.command {
+                        command.handle_edit_command(event);
+                    } else {
+                        self.view.delete_backspace()
+                    }
+                }
                 Command::Delete => self.view.delete(),
                 Command::Save => {
                     if self.command.is_none() {
@@ -174,7 +194,14 @@ impl Editor {
         if self.size.height > 2 {
             self.view.render(0);
         }
-        let (col, row) = self.view.cursor_pos();
+        let (col, row) = if let Some(ref command) = self.command {
+            (
+                command.caret_pos_col() as u16,
+                self.size.height.saturating_sub(1),
+            )
+        } else {
+            self.view.cursor_pos()
+        };
 
         let _ = terminal::move_caret(col, row);
         let _ = terminal::show_caret();
@@ -215,15 +242,24 @@ impl Editor {
 
     fn handle_save(&mut self) {
         if self.view.has_file() {
-            if self.view.save().is_ok() {
-                self.message
-                    .update_message(String::from("File saved successfully."));
-            } else {
-                self.message
-                    .update_message(String::from("Error while saving file."));
-            }
+            self.save(None);
         } else {
             self.show_prompt();
+        }
+    }
+
+    fn save(&mut self, file: Option<&str>) {
+        let res = if let Some(name) = file {
+            self.view.save_as(name)
+        } else {
+            self.view.save()
+        };
+        if res.is_ok() {
+            self.message
+                .update_message(String::from("File saved successfully."));
+        } else {
+            self.message
+                .update_message(String::from("Error while saving file."));
         }
     }
 

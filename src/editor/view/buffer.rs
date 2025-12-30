@@ -12,6 +12,10 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    pub fn has_file(&self) -> bool {
+        self.file.is_some()
+    }
+
     pub fn load(&mut self, path: PathBuf) -> anyhow::Result<()> {
         let contents = std::fs::read_to_string(&path).context("read from file")?;
         self.lines = contents.lines().map(Line::from).collect();

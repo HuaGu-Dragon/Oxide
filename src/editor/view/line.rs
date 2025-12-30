@@ -88,6 +88,10 @@ impl Line {
             .sum()
     }
 
+    pub fn width(&self) -> usize {
+        self.width_until(self.grapheme_count())
+    }
+
     pub fn insert_char(&mut self, c: char, grapheme_index: usize) {
         let mut res = String::with_capacity(self.bytes + c.len_utf8());
 
@@ -107,6 +111,10 @@ impl Line {
         self.fragments = str_to_fragments(&res);
     }
 
+    pub fn append_char(&mut self, c: char) {
+        self.insert_char(c, self.grapheme_count());
+    }
+
     pub fn delete(&mut self, grapheme_index: usize) {
         let mut res = String::with_capacity(self.bytes);
 
@@ -122,6 +130,10 @@ impl Line {
             self.bytes -= value.grapheme.len();
         }
         self.fragments = str_to_fragments(&res);
+    }
+
+    pub fn delete_last(&mut self) {
+        self.delete(self.grapheme_count().saturating_sub(1));
     }
 
     pub fn append(&mut self, next_line: Line) {

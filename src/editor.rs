@@ -6,12 +6,14 @@ use crossterm::event::{Event, read};
 use crate::{
     Cli,
     editor::{
-        command::Command, message::MessageBar, status::StatusBar, ui::UiComponent, view::View,
+        command::CommandBar, event::Command, message::MessageBar, status::StatusBar,
+        ui::UiComponent, view::View,
     },
     terminal,
 };
 
 mod command;
+mod event;
 mod message;
 mod status;
 mod ui;
@@ -49,6 +51,7 @@ pub struct Editor {
     view: View,
     status: StatusBar,
     message: MessageBar,
+    command: Option<CommandBar>,
     title: String,
     size: Size,
     quit_time: u8,
@@ -88,7 +91,6 @@ impl Editor {
         loop {
             self.refresh_screen();
             self.refresh_status();
-            // self.refresh_message();
             if self.should_quit {
                 break;
             }
@@ -112,17 +114,44 @@ impl Editor {
             if !matches!(event, Command::Save | Command::Quit) {
                 self.reset_quit_time();
             }
+            // TODO: Make it more simple
             match event {
-                Command::Move(direction) => self.view.move_point(direction),
-                Command::StartOfLine => self.view.move_to_start_of_line(),
-                Command::EndOfLine => self.view.move_to_end_of_line(),
+                Command::Move(direction) => {
+                    if self.command.is_none() {
+                        self.view.move_point(direction)
+                    }
+                }
+                Command::StartOfLine => {
+                    if self.command.is_none() {
+                        self.view.move_to_start_of_line()
+                    }
+                }
+                Command::EndOfLine => {
+                    if self.command.is_none() {
+                        self.view.move_to_end_of_line()
+                    }
+                }
                 Command::Resize(size) => self.resize(size),
                 Command::Insert(c) => self.view.insert_char(c),
                 Command::Enter => self.view.insert_newline(),
                 Command::Backspace => self.view.delete_backspace(),
                 Command::Delete => self.view.delete(),
-                Command::Save => self.handle_save(),
-                Command::Quit => self.handle_quit(),
+                Command::Save => {
+                    if self.command.is_none() {
+                        self.handle_save()
+                    }
+                }
+                Command::Quit => {
+                    if self.command.is_none() {
+                        self.handle_quit()
+                    }
+                }
+                Command::Dismiss => {
+                    if self.command.is_some() {
+                        self.dismiss_prompt();
+                        self.message.update_message(String::from("Save aborted."));
+                    }
+                }
             }
         }
     }
@@ -134,7 +163,11 @@ impl Editor {
 
         let _ = terminal::hide_caret();
 
-        self.message.render(self.size.height.saturating_sub(1));
+        if let Some(ref mut command) = self.command {
+            command.render(self.size.height.saturating_sub(1));
+        } else {
+            self.message.render(self.size.height.saturating_sub(1));
+        }
         if self.size.height > 1 {
             self.status.render(self.size.height.saturating_sub(2));
         }
@@ -172,15 +205,25 @@ impl Editor {
             width: size.width,
             height: 1,
         });
+        if let Some(ref mut command) = self.command {
+            command.resize(Size {
+                width: size.width,
+                height: 1,
+            });
+        }
     }
 
     fn handle_save(&mut self) {
-        if self.view.save().is_ok() {
-            self.message
-                .update_message(String::from("File saved successfully."));
+        if self.view.has_file() {
+            if self.view.save().is_ok() {
+                self.message
+                    .update_message(String::from("File saved successfully."));
+            } else {
+                self.message
+                    .update_message(String::from("Error while saving file."));
+            }
         } else {
-            self.message
-                .update_message(String::from("Error while saving file."));
+            self.show_prompt();
         }
     }
 
@@ -199,6 +242,22 @@ impl Editor {
     fn reset_quit_time(&mut self) {
         self.quit_time = 0;
         self.message.update_message(String::from(""));
+    }
+
+    fn dismiss_prompt(&mut self) {
+        self.command = None;
+        self.message.set_render(true);
+    }
+
+    fn show_prompt(&mut self) {
+        let mut command_bar = CommandBar::default();
+        command_bar.set_prompt(String::from("Save as: "));
+        command_bar.resize(Size {
+            width: self.size.width,
+            height: 1,
+        });
+        command_bar.set_render(true);
+        self.command = Some(command_bar);
     }
 }
 

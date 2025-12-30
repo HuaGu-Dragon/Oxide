@@ -1,62 +1,65 @@
-use anyhow::{Ok, anyhow};
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crate::{
+    editor::{event::Command, ui::UiComponent, view::line::Line},
+    terminal,
+};
 
-use crate::editor::Size;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
+#[derive(Default)]
+pub struct CommandBar {
+    prompt: String,
+    value: Line,
+    width: u16,
+    render: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Command {
-    Move(Direction),
-    Resize(Size),
-    Quit,
-    Insert(char),
-    Delete,
-    Backspace,
-    StartOfLine,
-    EndOfLine,
-    Enter,
-    Save,
-}
-
-impl TryFrom<Event> for Command {
-    type Error = anyhow::Error;
-
-    fn try_from(value: Event) -> Result<Self, Self::Error> {
-        match value {
-            Event::FocusGained => Err(anyhow!("Not yet implement")),
-            Event::FocusLost => Err(anyhow!("Not yet implement")),
-            Event::Key(KeyEvent {
-                code,
-                modifiers,
-                kind: KeyEventKind::Press,
-                ..
-            }) => match (code, modifiers) {
-                (KeyCode::Char('q'), KeyModifiers::CONTROL) => Ok(Self::Quit),
-                (KeyCode::Char('s'), KeyModifiers::CONTROL) => Ok(Self::Save),
-                (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => Ok(Self::Insert(c)),
-                (KeyCode::Tab, _) => Ok(Self::Insert('\t')),
-                (KeyCode::Enter, _) => Ok(Self::Enter),
-                (KeyCode::Backspace, _) => Ok(Self::Backspace),
-                (KeyCode::Delete, _) => Ok(Self::Delete),
-                (KeyCode::Up, _) => Ok(Self::Move(Direction::Up)),
-                (KeyCode::Down, _) => Ok(Self::Move(Direction::Down)),
-                (KeyCode::Left, _) => Ok(Self::Move(Direction::Left)),
-                (KeyCode::Right, _) => Ok(Self::Move(Direction::Right)),
-                (KeyCode::Home, _) => Ok(Self::StartOfLine),
-                (KeyCode::End, _) => Ok(Self::EndOfLine),
-                _ => Err(anyhow!("Not yet implement")),
-            },
-            Event::Mouse(_mouse_event) => Err(anyhow!("Not yet implement")),
-            Event::Paste(_) => Err(anyhow!("Not yet implement")),
-            Event::Resize(width, height) => Ok(Self::Resize(Size { width, height })),
-            _ => Err(anyhow!("Not yet implement")),
+impl CommandBar {
+    pub fn handle_edit_command(&mut self, command: Command) {
+        match command {
+            Command::Insert(c) => self.value.append_char(c),
+            Command::Backspace => self.value.delete_last(),
+            _ => {}
         }
+        self.set_render(true);
+    }
+
+    pub fn caret_pos_col(&self) -> usize {
+        let max_width = self
+            .prompt
+            .len()
+            .saturating_add(self.value.grapheme_count());
+        std::cmp::min(self.width as usize, max_width)
+    }
+
+    pub fn set_prompt(&mut self, prompt: String) {
+        self.prompt = prompt
+    }
+}
+
+impl UiComponent for CommandBar {
+    fn set_render(&mut self, render: bool) {
+        self.render = render
+    }
+
+    fn needs_render(&self) -> bool {
+        self.render
+    }
+
+    fn set_size(&mut self, width: u16, _height: u16) {
+        self.width = width
+    }
+
+    fn draw(&mut self, y: u16) -> anyhow::Result<()> {
+        // TODO: use `width` instanceof `len`?
+        let area = (self.width as usize).saturating_sub(self.prompt.len());
+
+        let value_end = self.value.width();
+
+        let value_start = value_end.saturating_sub(area);
+        let message = format!(
+            "{}{}",
+            self.prompt,
+            self.value.get_visable_graphemes(value_start..value_end)
+        );
+
+        terminal::print_at(0, y, true, message)
     }
 }

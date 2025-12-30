@@ -6,7 +6,7 @@ use std::{
 use crate::{
     editor::{
         DocumentStatus, Size,
-        command::Direction,
+        event::Direction,
         ui::UiComponent,
         view::{
             buffer::Buffer,
@@ -33,6 +33,10 @@ pub struct View {
 }
 
 impl View {
+    pub fn has_file(&self) -> bool {
+        self.buffer.has_file()
+    }
+
     pub fn load(&mut self, path: Option<PathBuf>) -> anyhow::Result<()> {
         if let Some(path) = path {
             self.buffer.load(path)?;

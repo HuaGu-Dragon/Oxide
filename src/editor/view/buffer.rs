@@ -2,7 +2,7 @@ use std::{io::Write, ops::Deref, path::PathBuf};
 
 use anyhow::Context;
 
-use crate::editor::view::line::Line;
+use crate::editor::view::{cursor::Location, line::Line};
 
 #[derive(Default)]
 pub struct Buffer {
@@ -84,6 +84,18 @@ impl Buffer {
         self.dirty = false;
         Ok(())
     }
+
+    pub fn search(&self, query: String) -> Option<Location> {
+        for (line_index, line) in self.lines.iter().enumerate() {
+            if let Some(grapheme_index) = line.search(&query) {
+                return Some(Location {
+                    grapheme_index,
+                    line_index,
+                });
+            }
+        }
+        None
+    }
 }
 
 impl Deref for Buffer {
@@ -92,4 +104,19 @@ impl Deref for Buffer {
     fn deref(&self) -> &Self::Target {
         self.lines.as_ref()
     }
+}
+
+#[test]
+fn test_search() {
+    let buffer = Buffer {
+        lines: vec![Line::from("Test: create a new file.")],
+        ..Default::default()
+    };
+    assert_eq!(
+        buffer.search("new".to_string()),
+        Some(Location {
+            grapheme_index: 15,
+            line_index: 0
+        })
+    );
 }

@@ -165,9 +165,18 @@ impl Editor {
             | Command::Save
             | Command::Search => {}
             Command::Insert(_) | Command::Backspace | Command::Delete => {
-                self.command.handle_edit_command(command)
+                self.command.handle_edit_command(command);
+                let query = self.command.get_value();
+                self.view.search(query);
             }
-            Command::Enter | Command::Dismiss => self.set_prompt(PromptType::None),
+            Command::Dismiss => {
+                self.set_prompt(PromptType::None);
+                self.view.dismiss_search();
+            }
+            Command::Enter => {
+                self.set_prompt(PromptType::None);
+                self.view.exit_search();
+            }
         }
     }
 
@@ -294,7 +303,11 @@ impl Editor {
 
     fn set_prompt(&mut self, prompt: PromptType) {
         match prompt {
-            PromptType::Search => self.command.set_prompt("Search: ".to_string()),
+            PromptType::Search => {
+                self.view.enter_search();
+                self.command
+                    .set_prompt("Search (Esc to cancel): ".to_string());
+            }
             PromptType::Save => self.command.set_prompt("Save as: ".to_string()),
             PromptType::None => self.message.set_render(true),
         }

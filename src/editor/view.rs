@@ -23,6 +23,11 @@ pub mod line;
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[derive(Clone, Copy)]
+struct SearchInfo {
+    previous_pos: Cursor,
+}
+
 #[derive(Default)]
 pub struct View {
     render: bool,
@@ -30,6 +35,7 @@ pub struct View {
     cursor: Cursor,
     offset: Position,
     size: Size,
+    search_info: Option<SearchInfo>,
 }
 
 impl View {
@@ -286,6 +292,35 @@ impl View {
 
     pub fn save_as(&mut self, path: &str) -> anyhow::Result<()> {
         self.buffer.save_as(path)
+    }
+
+    pub fn enter_search(&mut self) {
+        self.search_info = Some(SearchInfo {
+            previous_pos: self.cursor,
+        });
+    }
+
+    pub fn search(&mut self, query: String) {
+        if query.is_empty() {
+            return;
+        }
+
+        if let Some(location) = self.buffer.search(query) {
+            self.cursor = Cursor::new(location);
+            self.scroll_buffer();
+        }
+    }
+
+    pub fn dismiss_search(&mut self) {
+        if let Some(search_info) = self.search_info {
+            self.cursor = search_info.previous_pos;
+        }
+        self.search_info = None;
+        self.scroll_buffer();
+    }
+
+    pub fn exit_search(&mut self) {
+        self.search_info = None
     }
 }
 

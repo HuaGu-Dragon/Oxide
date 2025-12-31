@@ -6,7 +6,7 @@ use std::{
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum GraphemeWidth {
     Half,
     Full,
@@ -23,6 +23,7 @@ impl Add<usize> for GraphemeWidth {
     }
 }
 
+#[derive(Debug)]
 struct TextFragment {
     grapheme: String,
     rendered_width: GraphemeWidth,
@@ -30,7 +31,7 @@ struct TextFragment {
     start_byte_idx: usize,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Line {
     fragments: Vec<TextFragment>,
     string: String,
@@ -38,7 +39,7 @@ pub struct Line {
 
 impl Display for Line {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self.string)
+        write!(f, "{}", self.string)
     }
 }
 
@@ -138,6 +139,18 @@ impl Line {
 
     fn rebuild_fragments(&mut self) {
         self.fragments = str_to_fragments(&self.string);
+    }
+
+    fn byte_idx_to_grapheme_index(&self, byte_index: usize) -> Option<usize> {
+        self.fragments
+            .iter()
+            .position(|fragment| fragment.start_byte_idx >= byte_index)
+    }
+
+    pub fn search(&self, query: &str) -> Option<usize> {
+        self.string
+            .find(query)
+            .and_then(|index| self.byte_idx_to_grapheme_index(index))
     }
 }
 
@@ -241,4 +254,16 @@ fn esc_and_bell() {
     assert_eq!(line.grapheme_count(), 3);
     assert_eq!(line.fragments[0].grapheme.width(), 1);
     assert_eq!(line.fragments[2].grapheme.width(), 1);
+}
+
+#[test]
+fn test_search() {
+    let line = Line::from("hello world");
+    assert_eq!(line.search("hello"), Some(0));
+    assert_eq!(line.search("world"), Some(6));
+
+    let line = Line::from("你好 世界");
+
+    assert_eq!(line.search("你好"), Some(0));
+    assert_eq!(line.search("世界"), Some(3));
 }

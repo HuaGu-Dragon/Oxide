@@ -15,7 +15,7 @@ impl CommandBar {
     pub fn handle_edit_command(&mut self, command: Command) {
         match command {
             Command::Insert(c) => self.value.append_char(c),
-            Command::Backspace => self.value.delete_last(),
+            Command::Backspace | Command::Delete => self.value.delete_last(),
             _ => {}
         }
         self.set_render(true);
@@ -30,11 +30,17 @@ impl CommandBar {
     }
 
     pub fn set_prompt(&mut self, prompt: String) {
-        self.prompt = prompt
+        self.prompt = prompt;
+        self.set_render(true);
     }
 
     pub fn get_value(&self) -> String {
         self.value.to_string()
+    }
+
+    pub fn clear(&mut self) {
+        self.value.clear();
+        self.set_render(true);
     }
 }
 

@@ -92,6 +92,11 @@ impl Line {
         self.width_until(self.grapheme_count())
     }
 
+    pub fn clear(&mut self) {
+        self.fragments.clear();
+        self.bytes = 0;
+    }
+
     pub fn insert_char(&mut self, c: char, grapheme_index: usize) {
         let mut res = String::with_capacity(self.bytes + c.len_utf8());
 

@@ -112,7 +112,17 @@ impl View {
         self.scroll_vertically(row);
     }
 
-    fn center_text_location(&mut self) {}
+    fn center_text_location(&mut self) {
+        let Size { width, height } = self.size;
+        let Position { col, row } = self.caret_position();
+
+        let horizontal = width.div_ceil(2);
+        let vertical = height.div_ceil(2);
+
+        self.offset.col = col.saturating_sub(horizontal as usize);
+        self.offset.row = row.saturating_sub(vertical as usize);
+        self.set_render(true);
+    }
 
     // TODO: maybe (x, y) is better?
     fn render_line(line: u16, text: impl Display) {

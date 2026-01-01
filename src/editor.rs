@@ -117,8 +117,6 @@ impl Editor {
                     }
                 }
             }
-            let status = self.view.get_status();
-            self.status.update_status(status);
         }
     }
 

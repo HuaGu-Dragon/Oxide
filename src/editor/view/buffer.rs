@@ -85,9 +85,14 @@ impl Buffer {
         Ok(())
     }
 
-    pub fn search(&self, query: String) -> Option<Location> {
-        for (line_index, line) in self.lines.iter().enumerate() {
-            if let Some(grapheme_index) = line.search(&query) {
+    pub fn search(&self, query: &str, location: Location) -> Option<Location> {
+        for (line_index, line) in self.lines.iter().enumerate().skip(location.line_index) {
+            let from_grapheme_index = if line_index == location.line_index {
+                location.grapheme_index
+            } else {
+                0
+            };
+            if let Some(grapheme_index) = line.search(query, from_grapheme_index) {
                 return Some(Location {
                     grapheme_index,
                     line_index,
@@ -113,7 +118,13 @@ fn test_search() {
         ..Default::default()
     };
     assert_eq!(
-        buffer.search("new".to_string()),
+        buffer.search(
+            "new",
+            Location {
+                grapheme_index: 0,
+                line_index: 0
+            }
+        ),
         Some(Location {
             grapheme_index: 15,
             line_index: 0

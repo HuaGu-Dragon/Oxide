@@ -6,8 +6,12 @@ use crossterm::event::{Event, read};
 use crate::{
     Cli,
     editor::{
-        command::CommandBar, event::Command, message::MessageBar, status::StatusBar,
-        ui::UiComponent, view::View,
+        command::CommandBar,
+        event::{Command, Direction},
+        message::MessageBar,
+        status::StatusBar,
+        ui::UiComponent,
+        view::View,
     },
     terminal,
 };
@@ -157,18 +161,12 @@ impl Editor {
 
     fn handle_event_during_search(&mut self, command: Command) {
         match command {
-            Command::Resize(_) => unreachable!(),
-            Command::Move(_)
-            | Command::Quit
-            | Command::StartOfLine
-            | Command::EndOfLine
-            | Command::Save
-            | Command::Search => {}
             Command::Insert(_) | Command::Backspace | Command::Delete => {
                 self.command.handle_edit_command(command);
                 let query = self.command.get_value();
-                self.view.search(query);
+                self.view.search(&query);
             }
+            Command::Move(Direction::Down | Direction::Right) => self.view.search_next(),
             Command::Dismiss => {
                 self.set_prompt(PromptType::None);
                 self.view.dismiss_search();
@@ -177,6 +175,13 @@ impl Editor {
                 self.set_prompt(PromptType::None);
                 self.view.exit_search();
             }
+            Command::Move(_)
+            | Command::Quit
+            | Command::StartOfLine
+            | Command::EndOfLine
+            | Command::Save
+            | Command::Search => {}
+            Command::Resize(_) => unreachable!(),
         }
     }
 

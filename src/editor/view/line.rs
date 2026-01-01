@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, Range},
+    ops::{Add, Deref, Range},
 };
 
 use unicode_segmentation::UnicodeSegmentation;
@@ -23,7 +23,7 @@ impl Add<usize> for GraphemeWidth {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct TextFragment {
     grapheme: String,
     rendered_width: GraphemeWidth,
@@ -31,7 +31,7 @@ struct TextFragment {
     start_byte_idx: usize,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Line {
     fragments: Vec<TextFragment>,
     string: String,
@@ -147,10 +147,18 @@ impl Line {
             .position(|fragment| fragment.start_byte_idx >= byte_index)
     }
 
-    pub fn search(&self, query: &str) -> Option<usize> {
+    fn grapheme_index_to_byte_idx(&self, grapheme_index: usize) -> Option<usize> {
+        self.fragments
+            .get(grapheme_index)
+            .map(|fragment| fragment.start_byte_idx)
+    }
+
+    pub fn search(&self, query: &str, grapheme_index: usize) -> Option<usize> {
+        let byte_index = self.grapheme_index_to_byte_idx(grapheme_index)?;
         self.string
-            .find(query)
-            .and_then(|index| self.byte_idx_to_grapheme_index(index))
+            .get(byte_index..)
+            .and_then(|s| s.find(query))
+            .and_then(|index| self.byte_idx_to_grapheme_index(index.saturating_add(byte_index)))
     }
 }
 
@@ -221,6 +229,14 @@ impl From<&str> for Line {
     }
 }
 
+impl Deref for Line {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.string
+    }
+}
+
 #[test]
 fn test_line_range() {
     let line = Line::from("Hello, world!");
@@ -259,11 +275,11 @@ fn esc_and_bell() {
 #[test]
 fn test_search() {
     let line = Line::from("hello world");
-    assert_eq!(line.search("hello"), Some(0));
-    assert_eq!(line.search("world"), Some(6));
+    assert_eq!(line.search("hello", 0), Some(0));
+    assert_eq!(line.search("world", 0), Some(6));
 
     let line = Line::from("你好 世界");
 
-    assert_eq!(line.search("你好"), Some(0));
-    assert_eq!(line.search("世界"), Some(3));
+    assert_eq!(line.search("你好", 0), Some(0));
+    assert_eq!(line.search("世界", 0), Some(3));
 }

@@ -11,6 +11,7 @@ use crate::{
         view::{
             buffer::Buffer,
             cursor::{Cursor, Location},
+            line::Line,
         },
     },
     terminal::{self, Position},
@@ -23,9 +24,11 @@ pub mod line;
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct SearchInfo {
     previous_pos: Cursor,
+    previous_offset: Position,
+    query: Line,
 }
 
 #[derive(Default)]
@@ -108,6 +111,8 @@ impl View {
         self.scroll_horizontally(col);
         self.scroll_vertically(row);
     }
+
+    fn center_text_location(&mut self) {}
 
     // TODO: maybe (x, y) is better?
     fn render_line(line: u16, text: impl Display) {
@@ -297,26 +302,51 @@ impl View {
     pub fn enter_search(&mut self) {
         self.search_info = Some(SearchInfo {
             previous_pos: self.cursor,
+            previous_offset: self.offset,
+            query: Line::default(),
         });
     }
 
-    pub fn search(&mut self, query: String) {
-        if query.is_empty() {
-            return;
+    pub fn search(&mut self, query: &str) {
+        if let Some(ref mut search_info) = self.search_info {
+            search_info.query = Line::from(query);
         }
+        self.search_from(self.cursor.location());
+    }
 
-        if let Some(location) = self.buffer.search(query) {
-            self.cursor = Cursor::new(location);
-            self.scroll_buffer();
+    fn search_from(&mut self, from: Location) {
+        if let Some(ref search_info) = self.search_info {
+            let query = &search_info.query;
+            if query.is_empty() {
+                return;
+            }
+
+            if let Some(location) = self.buffer.search(query, from) {
+                self.cursor = Cursor::new(location);
+                self.center_text_location();
+            }
+        }
+    }
+
+    pub fn search_next(&mut self) {
+        if let Some(ref search_info) = self.search_info {
+            let step_right = std::cmp::max(search_info.query.grapheme_count(), 1);
+            let location = Location {
+                grapheme_index: self.cursor.location().grapheme_index,
+                line_index: self.cursor.location().line_index.saturating_add(step_right),
+            };
+
+            self.search_from(location);
         }
     }
 
     pub fn dismiss_search(&mut self) {
-        if let Some(search_info) = self.search_info {
+        if let Some(ref mut search_info) = self.search_info {
             self.cursor = search_info.previous_pos;
+            self.offset = search_info.previous_offset;
+            self.set_render(true);
         }
         self.search_info = None;
-        self.scroll_buffer();
     }
 
     pub fn exit_search(&mut self) {

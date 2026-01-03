@@ -162,8 +162,9 @@ impl Editor {
             Command::Insert(_) | Command::Backspace | Command::Delete => {
                 self.command.handle_edit_command(command);
                 let query = self.command.get_value();
-                self.view.search(&query);
+                self.view.search_forward(&query);
             }
+            Command::Move(Direction::Up | Direction::Left) => self.view.search_prev(),
             Command::Move(Direction::Down | Direction::Right) => self.view.search_next(),
             Command::Dismiss => {
                 self.set_prompt(PromptType::None);
@@ -173,8 +174,7 @@ impl Editor {
                 self.set_prompt(PromptType::None);
                 self.view.exit_search();
             }
-            Command::Move(_)
-            | Command::Quit
+            Command::Quit
             | Command::StartOfLine
             | Command::EndOfLine
             | Command::Save

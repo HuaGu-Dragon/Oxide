@@ -24,6 +24,13 @@ pub mod line;
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum SearchDirection {
+    #[default]
+    Forward,
+    Backward,
+}
+
 #[derive(Clone)]
 struct SearchInfo {
     previous_pos: Cursor,
@@ -317,21 +324,24 @@ impl View {
         });
     }
 
-    pub fn search(&mut self, query: &str) {
+    pub fn search_forward(&mut self, query: &str) {
         if let Some(ref mut search_info) = self.search_info {
             search_info.query = Line::from(query);
         }
-        self.search_from(self.cursor.location());
+        self.search_from(self.cursor.location(), SearchDirection::Forward);
     }
 
-    fn search_from(&mut self, from: Location) {
+    fn search_from(&mut self, from: Location, direction: SearchDirection) {
         if let Some(ref search_info) = self.search_info {
             let query = &search_info.query;
             if query.is_empty() {
                 return;
             }
 
-            if let Some(location) = self.buffer.search(query, from) {
+            if let Some(location) = match direction {
+                SearchDirection::Forward => self.buffer.search_forward(query, from),
+                SearchDirection::Backward => self.buffer.search_backward(query, from),
+            } {
                 self.cursor = Cursor::new(location);
                 self.center_text_location();
             }
@@ -346,15 +356,19 @@ impl View {
                 line_index: self.cursor.location().line_index.saturating_add(step_right),
             };
 
-            self.search_from(location);
+            self.search_from(location, SearchDirection::Forward);
         }
+    }
+
+    pub fn search_prev(&mut self) {
+        self.search_from(self.cursor.location(), SearchDirection::Backward);
     }
 
     pub fn dismiss_search(&mut self) {
         if let Some(ref mut search_info) = self.search_info {
             self.cursor = search_info.previous_pos;
             self.offset = search_info.previous_offset;
-            self.set_render(true);
+            self.scroll_buffer();
         }
         self.search_info = None;
     }

@@ -153,12 +153,20 @@ impl Line {
             .map(|fragment| fragment.start_byte_idx)
     }
 
-    pub fn search(&self, query: &str, grapheme_index: usize) -> Option<usize> {
+    pub fn search_forward(&self, query: &str, grapheme_index: usize) -> Option<usize> {
         let byte_index = self.grapheme_index_to_byte_idx(grapheme_index)?;
         self.string
             .get(byte_index..)
             .and_then(|s| s.find(query))
             .and_then(|index| self.byte_idx_to_grapheme_index(index.saturating_add(byte_index)))
+    }
+
+    pub fn search_backward(&self, query: &str, grapheme_index: usize) -> Option<usize> {
+        let byte_index = self.grapheme_index_to_byte_idx(grapheme_index)?;
+        self.string
+            .get(..byte_index)
+            .and_then(|s| s.rfind(query))
+            .and_then(|index| self.byte_idx_to_grapheme_index(index))
     }
 }
 
@@ -275,11 +283,14 @@ fn esc_and_bell() {
 #[test]
 fn test_search() {
     let line = Line::from("hello world");
-    assert_eq!(line.search("hello", 0), Some(0));
-    assert_eq!(line.search("world", 0), Some(6));
+    assert_eq!(line.search_forward("hello", 0), Some(0));
+    assert_eq!(line.search_forward("world", 0), Some(6));
 
-    let line = Line::from("你好 世界");
+    let line = Line::from("你好 世界 ");
 
-    assert_eq!(line.search("你好", 0), Some(0));
-    assert_eq!(line.search("世界", 0), Some(3));
+    assert_eq!(line.search_forward("你好", 0), Some(0));
+    assert_eq!(line.search_forward("世界", 0), Some(3));
+
+    assert_eq!(line.search_backward("你好", 5), Some(0));
+    assert_eq!(line.search_backward("世界", 5), Some(3));
 }

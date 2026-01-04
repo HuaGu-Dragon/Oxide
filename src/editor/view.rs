@@ -31,7 +31,7 @@ pub enum SearchDirection {
     Backward,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct SearchInfo {
     previous_pos: Cursor,
     previous_offset: Position,
@@ -352,8 +352,12 @@ impl View {
         if let Some(ref search_info) = self.search_info {
             let step_right = std::cmp::max(search_info.query.grapheme_count(), 1);
             let location = Location {
-                grapheme_index: self.cursor.location().grapheme_index,
-                line_index: self.cursor.location().line_index.saturating_add(step_right),
+                grapheme_index: self
+                    .cursor
+                    .location()
+                    .grapheme_index
+                    .saturating_add(step_right),
+                line_index: self.cursor.location().line_index,
             };
 
             self.search_from(location, SearchDirection::Forward);

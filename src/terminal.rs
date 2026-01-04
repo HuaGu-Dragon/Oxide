@@ -10,7 +10,7 @@ use crossterm::{
     terminal,
 };
 
-#[derive(Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Position {
     pub col: usize,
     pub row: usize,

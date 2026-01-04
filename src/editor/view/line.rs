@@ -154,7 +154,12 @@ impl Line {
     }
 
     pub fn search_forward(&self, query: &str, grapheme_index: usize) -> Option<usize> {
-        let byte_index = self.grapheme_index_to_byte_idx(grapheme_index)?;
+        let byte_index = if grapheme_index == self.grapheme_count() {
+            None
+        } else {
+            self.grapheme_index_to_byte_idx(grapheme_index)
+        }?;
+
         self.string
             .get(byte_index..)
             .and_then(|s| s.find(query))
@@ -162,7 +167,12 @@ impl Line {
     }
 
     pub fn search_backward(&self, query: &str, grapheme_index: usize) -> Option<usize> {
-        let byte_index = self.grapheme_index_to_byte_idx(grapheme_index)?;
+        let byte_index = if grapheme_index == self.grapheme_count() {
+            Some(self.string.len())
+        } else {
+            self.grapheme_index_to_byte_idx(grapheme_index)
+        }?;
+
         self.string
             .get(..byte_index)
             .and_then(|s| s.rfind(query))

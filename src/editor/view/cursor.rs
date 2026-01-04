@@ -4,7 +4,7 @@ pub struct Location {
     pub line_index: usize,
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Cursor {
     at: Location,
 }

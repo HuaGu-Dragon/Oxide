@@ -8,7 +8,7 @@ use crate::editor::view::{cursor::Location, line::Line};
 pub struct Buffer {
     pub file: Option<PathBuf>,
     pub dirty: bool,
-    lines: Vec<Line>,
+    pub(crate) lines: Vec<Line>,
 }
 
 impl Buffer {
@@ -188,6 +188,41 @@ fn test_search() {
         ),
         Some(Location {
             grapheme_index: 15,
+            line_index: 0
+        })
+    )
+}
+
+#[test]
+fn search_same() {
+    let buffer = Buffer {
+        lines: vec![Line::from("new new new new")],
+        ..Default::default()
+    };
+    assert_eq!(
+        buffer.search_forward(
+            "new",
+            Location {
+                grapheme_index: 0,
+                line_index: 0
+            }
+        ),
+        Some(Location {
+            grapheme_index: 0,
+            line_index: 0
+        })
+    );
+
+    assert_eq!(
+        buffer.search_backward(
+            "new",
+            Location {
+                grapheme_index: 0,
+                line_index: 0
+            }
+        ),
+        Some(Location {
+            grapheme_index: 12,
             line_index: 0
         })
     )

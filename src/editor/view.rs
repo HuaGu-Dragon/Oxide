@@ -410,3 +410,33 @@ impl UiComponent for View {
         Ok(())
     }
 }
+
+#[test]
+fn test_search() {
+    let mut view = View {
+        buffer: Buffer {
+            lines: vec![Line::from("new new new new")],
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    view.enter_search();
+    view.search_forward("new");
+    assert_eq!(
+        view.cursor.location(),
+        Location {
+            grapheme_index: 0,
+            line_index: 0
+        }
+    );
+
+    view.search_next();
+    assert_eq!(
+        view.cursor.location(),
+        Location {
+            grapheme_index: 4,
+            line_index: 0
+        }
+    );
+}

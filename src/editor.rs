@@ -16,6 +16,7 @@ use crate::{
     terminal,
 };
 
+pub mod annotated;
 mod command;
 mod event;
 mod message;

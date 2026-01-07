@@ -22,8 +22,55 @@ impl AnnotatedString {
         if bytes.start > self.inner.len() {
             return;
         }
+        let start_idx = bytes.start;
         let end_idx = std::cmp::min(bytes.end, self.inner.len());
+        let replaced_range_len = end_idx.saturating_sub(bytes.start);
         self.inner.replace_range(bytes, replace_with);
+
+        let shortened = replaced_range_len < replace_with.len();
+        let difference = replace_with.len().abs_diff(replaced_range_len);
+
+        if difference == 0 {
+            return;
+        }
+
+        self.annotations.iter_mut().for_each(|annotation| {
+            annotation.bytes.start = if annotation.bytes.start >= end_idx {
+                if shortened {
+                    annotation.bytes.start.saturating_sub(difference)
+                } else {
+                    annotation.bytes.start.saturating_add(difference)
+                }
+            } else if annotation.bytes.start >= start_idx {
+                if shortened {
+                    std::cmp::max(start_idx, annotation.bytes.start.saturating_sub(difference))
+                } else {
+                    std::cmp::min(end_idx, annotation.bytes.start.saturating_add(difference))
+                }
+            } else {
+                annotation.bytes.start
+            };
+            annotation.bytes.end = if annotation.bytes.end >= end_idx {
+                if shortened {
+                    annotation.bytes.end.saturating_sub(difference)
+                } else {
+                    annotation.bytes.end.saturating_add(difference)
+                }
+            } else if annotation.bytes.end >= start_idx {
+                if shortened {
+                    std::cmp::max(start_idx, annotation.bytes.end.saturating_sub(difference))
+                } else {
+                    std::cmp::min(end_idx, annotation.bytes.end.saturating_add(difference))
+                }
+            } else {
+                annotation.bytes.end
+            }
+        });
+
+        self.annotations.retain(|annotation| {
+            annotation.bytes.start < annotation.bytes.end
+                && annotation.bytes.start < self.inner.len()
+        });
     }
 }
 

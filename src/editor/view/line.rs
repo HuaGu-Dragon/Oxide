@@ -388,10 +388,18 @@ fn test_search() {
 
     assert_eq!(line.search_backward("你好", 5), Some(0));
     assert_eq!(line.search_backward("世界", 5), Some(3));
-    // assert!(
-    //     "· ̷̖̉ě̵̜t̵̛̪ ̵̗̓ḛ̸͋a̷̗͝ ̴̞̓r̸͚͑è̴ͅb̸̺͋u̵̘̎m̷͔̑.̴̗̒ ̷̨̈́Ș̸͆t̴̳̽e̴̢̓ẗ̷̟́ ̶̙̚c̷̯̈l̴̺̀ī̸̟t̶̗̏a̷̻̿ ̷̯͒k̵̩͋å̵̬s̴̙̕d̷͚͛ ̷̧̿g̸͈͝ũ̶̳b̴̮̒e̸̛͓r̶̼̚g̸͎̉r"
-    //         .match_indices("m")
-    //         .collect::<Vec<_>>()
-    //         .is_empty()
-    // );
+}
+
+#[test]
+fn annotation() {
+    let line = Line::from("Control");
+    let annotation = line.get_annotated_visiable_string(0..7, Some("o"), Some(2));
+    let mut iter = annotation.into_iter();
+
+    assert!(iter.next().is_some()); // C
+    assert!(iter.next().is_some()); // o
+    assert!(iter.next().is_some()); // ntr
+    assert!(iter.next().is_some()); // o
+    assert!(iter.next().is_some()); // l
+    assert!(iter.next().is_none());
 }

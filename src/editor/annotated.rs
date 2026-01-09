@@ -27,7 +27,7 @@ impl AnnotatedString {
         let replaced_range_len = end_idx.saturating_sub(bytes.start);
         self.inner.replace_range(bytes, replace_with);
 
-        let shortened = replaced_range_len < replace_with.len();
+        let shortened = replace_with.len() < replaced_range_len;
         let difference = replace_with.len().abs_diff(replaced_range_len);
 
         if difference == 0 {

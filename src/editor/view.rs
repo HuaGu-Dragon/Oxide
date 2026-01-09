@@ -38,6 +38,12 @@ struct SearchInfo {
     query: Line,
 }
 
+impl SearchInfo {
+    fn query(&self) -> &str {
+        &self.query[..]
+    }
+}
+
 #[derive(Default)]
 pub struct View {
     render: bool,
@@ -212,9 +218,23 @@ impl View {
         let (left, top) = self.offset.pos();
 
         for row in 0..rows {
-            if let Some(text) = self.buffer.get(top.saturating_add(row as usize)) {
+            let line_index = top.saturating_add(row as usize);
+            if let Some(text) = self.buffer.get(line_index) {
                 let right = left.saturating_add(cols as usize);
-                Self::render_line(row, text.get_visable_graphemes(left..right));
+                let query = self
+                    .search_info
+                    .as_ref()
+                    .map(|search_info| search_info.query());
+
+                let select_match = (self.cursor.location().line_index == line_index
+                    && query.is_some())
+                .then_some(self.cursor.location().grapheme_index);
+
+                let _ = terminal::print_annotated_row(
+                    row,
+                    text.get_annotated_visiable_string(left..right, query, select_match),
+                );
+                // Self::render_line(row, text.get_visable_graphemes(left..right));
             } else {
                 Self::render_line(row, "~");
             }

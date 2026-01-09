@@ -1,8 +1,14 @@
 use std::{fmt::Display, ops::Range};
 
-use crate::editor::annotated::annotation::{Annotation, AnnotationType};
+use crate::editor::annotated::{
+    annotation::{Annotation, AnnotationType},
+    iter::IntoIter,
+    part::Part,
+};
 
 pub mod annotation;
+pub mod iter;
+pub mod part;
 
 #[derive(Debug, Default)]
 pub struct AnnotatedString {
@@ -92,5 +98,15 @@ impl From<String> for AnnotatedString {
 impl Display for AnnotatedString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
+    }
+}
+
+impl<'a> IntoIterator for &'a AnnotatedString {
+    type Item = Part<'a>;
+
+    type IntoIter = IntoIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter::new(self)
     }
 }

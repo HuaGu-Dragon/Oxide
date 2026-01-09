@@ -6,7 +6,7 @@ pub struct Annotation {
     pub bytes: Range<usize>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum AnnotationType {
     Match,
     SelectedMatch,

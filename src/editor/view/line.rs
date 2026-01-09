@@ -104,12 +104,12 @@ impl Line {
             if fragment_start < range.end && fragment_end > range.end {
                 res.replace(fragnment.start_byte_idx..self.string.len(), "⋯");
                 continue;
-            } else if fragment_start == fragment_end {
+            } else if fragment_start == range.end {
                 res.replace(fragnment.start_byte_idx..self.string.len(), "");
                 continue;
             }
 
-            if fragment_end < range.start {
+            if fragment_end <= range.start {
                 res.replace(
                     0..fragnment
                         .start_byte_idx
@@ -388,4 +388,10 @@ fn test_search() {
 
     assert_eq!(line.search_backward("你好", 5), Some(0));
     assert_eq!(line.search_backward("世界", 5), Some(3));
+    // assert!(
+    //     "· ̷̖̉ě̵̜t̵̛̪ ̵̗̓ḛ̸͋a̷̗͝ ̴̞̓r̸͚͑è̴ͅb̸̺͋u̵̘̎m̷͔̑.̴̗̒ ̷̨̈́Ș̸͆t̴̳̽e̴̢̓ẗ̷̟́ ̶̙̚c̷̯̈l̴̺̀ī̸̟t̶̗̏a̷̻̿ ̷̯͒k̵̩͋å̵̬s̴̙̕d̷͚͛ ̷̧̿g̸͈͝ũ̶̳b̴̮̒e̸̛͓r̶̼̚g̸͎̉r"
+    //         .match_indices("m")
+    //         .collect::<Vec<_>>()
+    //         .is_empty()
+    // );
 }

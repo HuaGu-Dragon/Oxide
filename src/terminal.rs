@@ -10,6 +10,11 @@ use crossterm::{
     terminal,
 };
 
+use crate::{
+    editor::annotated::{AnnotatedString, annotation::AnnotationType},
+    terminal::attribute::Attribute,
+};
+
 mod attribute;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -118,6 +123,7 @@ pub fn print_at(col: u16, row: u16, clear: bool, text: impl Display) -> anyhow::
 
     print(text)
 }
+
 pub fn print_inverted_at(
     col: u16,
     row: u16,
@@ -130,6 +136,42 @@ pub fn print_inverted_at(
     }
 
     print_inverted(text)
+}
+
+pub fn print_annotated_row(row: u16, annotated_string: AnnotatedString) -> anyhow::Result<()> {
+    move_caret(0, row)?;
+    clear_line()?;
+
+    annotated_string
+        .into_iter()
+        .try_for_each(|part| -> anyhow::Result<()> {
+            if let Some(annotation) = part.annotation {
+                set_attribute(annotation)?;
+            }
+
+            print(part.inner)?;
+            reset_color()?;
+
+            Ok(())
+        })?;
+
+    Ok(())
+}
+
+fn set_attribute(annotation: AnnotationType) -> anyhow::Result<()> {
+    let attribute: Attribute = annotation.into();
+    if let Some(foreground) = attribute.foreground {
+        queue!(stdout(), style::SetForegroundColor(foreground)).context("set foreground color")?;
+    }
+    if let Some(background) = attribute.background {
+        queue!(stdout(), style::SetForegroundColor(background)).context("set background color")?;
+    }
+
+    Ok(())
+}
+
+fn reset_color() -> anyhow::Result<()> {
+    queue!(stdout(), style::ResetColor).context("reset color")
 }
 
 pub fn execute() -> anyhow::Result<()> {

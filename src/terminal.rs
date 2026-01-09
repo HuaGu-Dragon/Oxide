@@ -10,6 +10,8 @@ use crossterm::{
     terminal,
 };
 
+mod attribute;
+
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Position {
     pub col: usize,

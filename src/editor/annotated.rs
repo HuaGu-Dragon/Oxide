@@ -2,7 +2,7 @@ use std::{fmt::Display, ops::Range};
 
 use crate::editor::annotated::annotation::{Annotation, AnnotationType};
 
-mod annotation;
+pub mod annotation;
 
 #[derive(Debug, Default)]
 pub struct AnnotatedString {

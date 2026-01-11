@@ -24,6 +24,14 @@ impl AnnotatedString {
         });
     }
 
+    pub fn truncate_left_until(&mut self, until: usize) {
+        self.replace(0..until, "");
+    }
+
+    pub fn truncate_right_at(&mut self, at: usize) {
+        self.replace(at..self.inner.len(), "");
+    }
+
     pub fn replace(&mut self, bytes: Range<usize>, replace_with: &str) {
         if bytes.start > self.inner.len() {
             return;

@@ -105,16 +105,15 @@ impl Line {
                 res.replace(fragnment.start_byte_idx..self.string.len(), "⋯");
                 continue;
             } else if fragment_start == range.end {
-                res.replace(fragnment.start_byte_idx..self.string.len(), "");
+                res.truncate_right_at(fragnment.start_byte_idx);
                 continue;
             }
 
             if fragment_end <= range.start {
-                res.replace(
-                    0..fragnment
+                res.truncate_left_until(
+                    fragnment
                         .start_byte_idx
                         .saturating_add(fragnment.grapheme.len()),
-                    "",
                 );
                 break;
             } else if fragment_start < range.start && fragment_end > range.start {

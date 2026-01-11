@@ -228,10 +228,9 @@ impl Line {
             self.grapheme_index_to_byte_idx(grapheme_index)
         }?;
 
-        self.string
-            .get(byte_index..)
-            .and_then(|s| s.find(query))
-            .and_then(|index| self.byte_idx_to_grapheme_index(index.saturating_add(byte_index)))
+        self.find_all(query, byte_index..self.string.len())
+            .first()
+            .map(|(_, grapheme_index)| *grapheme_index)
     }
 
     pub fn search_backward(&self, query: &str, grapheme_index: usize) -> Option<usize> {
@@ -241,26 +240,48 @@ impl Line {
             self.grapheme_index_to_byte_idx(grapheme_index)
         }?;
 
-        self.string
-            .get(..byte_index)
-            .and_then(|s| s.rfind(query))
-            .and_then(|index| self.byte_idx_to_grapheme_index(index))
+        self.find_all(query, 0..byte_index)
+            .last()
+            .map(|(_, grapheme_index)| *grapheme_index)
     }
 
     /// return: (bytes_index, grapheme_index)
     fn find_all(&self, query: &str, range: Range<usize>) -> Vec<(usize, usize)> {
+        debug_assert!(range.start <= self.string.len());
         self.string
-            .get(range.start..range.end)
+            .get(range.start..std::cmp::min(range.end, self.string.len()))
             .map_or_else(Vec::new, |substr| {
-                substr
+                let potential_matches = substr
                     .match_indices(query)
-                    .filter_map(|(relative_idx, _)| {
-                        let abs_idx = range.start.saturating_add(relative_idx);
-                        self.byte_idx_to_grapheme_index(abs_idx)
-                            .map(|grapheme_idx| (abs_idx, grapheme_idx))
-                    })
-                    .collect()
+                    .map(|(idx, _)| idx.saturating_add(range.start));
+
+                self.match_grapheme_clusters(potential_matches, query)
             })
+    }
+
+    fn match_grapheme_clusters(
+        &self,
+        matches: impl Iterator<Item = usize>,
+        query: &str,
+    ) -> Vec<(usize, usize)> {
+        let grapheme_count = query.graphemes(true).count();
+
+        matches
+            .filter_map(|idx| {
+                self.byte_idx_to_grapheme_index(idx)
+                    .and_then(|grapheme_idx| {
+                        self.fragments
+                            .get(grapheme_idx..grapheme_idx.saturating_add(grapheme_count))
+                            .and_then(|fragments| {
+                                let substr = fragments
+                                    .iter()
+                                    .map(|fragment| fragment.grapheme.as_str())
+                                    .collect::<String>();
+                                (substr == query).then_some((idx, grapheme_idx))
+                            })
+                    })
+            })
+            .collect()
     }
 }
 

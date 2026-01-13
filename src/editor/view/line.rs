@@ -70,6 +70,12 @@ impl Line {
     ) -> AnnotatedString {
         let mut res = AnnotatedString::from(&self.string[..]);
 
+        self.string.chars().enumerate().for_each(|(idx, ch)| {
+            if ch.is_ascii_digit() {
+                res.add_annotation(AnnotationType::Digit, idx..idx.saturating_add(1));
+            }
+        });
+
         if let Some(query) = query
             && !query.is_empty()
         {

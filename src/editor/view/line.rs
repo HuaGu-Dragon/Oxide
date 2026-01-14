@@ -70,9 +70,19 @@ impl Line {
     ) -> AnnotatedString {
         let mut res = AnnotatedString::from(&self.string[..]);
 
+        let mut skip = 0;
         self.string.chars().enumerate().for_each(|(idx, ch)| {
+            if skip > 0 {
+                skip -= 1;
+                return;
+            }
             if ch.is_ascii_digit() || ch == '.' {
                 res.add_annotation(AnnotationType::Digit, idx..idx.saturating_add(1));
+            }
+            if ch == '#' {
+                let end = idx.saturating_add(self[idx..].find('\n').unwrap_or(self.len()));
+                res.add_annotation(AnnotationType::Comment, idx..idx + end);
+                skip = end;
             }
         });
 

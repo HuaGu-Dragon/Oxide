@@ -10,5 +10,6 @@ pub struct Annotation {
 pub enum AnnotationType {
     Match,
     SelectedMatch,
-    Digit
+    Digit,
+    Comment,
 }

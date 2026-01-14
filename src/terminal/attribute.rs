@@ -26,16 +26,22 @@ impl From<AnnotationType> for Attribute {
                     b: 0,
                 }),
             },
-            AnnotationType::Digit => {
-                Self {
-                    foreground: Some(Color::White),
-                    background: Some(Color::Rgb {
-                        r: 255,
-                        g: 99,
-                        b: 71,
-                    }),
-                }
-            }
+            AnnotationType::Digit => Self {
+                foreground: Some(Color::White),
+                background: Some(Color::Rgb {
+                    r: 255,
+                    g: 99,
+                    b: 71,
+                }),
+            },
+            AnnotationType::Comment => Self {
+                foreground: Some(Color::White),
+                background: Some(Color::Rgb {
+                    r: 100,
+                    g: 100,
+                    b: 100,
+                }),
+            },
         }
     }
 }

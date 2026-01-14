@@ -71,7 +71,7 @@ impl Line {
         let mut res = AnnotatedString::from(&self.string[..]);
 
         self.string.chars().enumerate().for_each(|(idx, ch)| {
-            if ch.is_ascii_digit() {
+            if ch.is_ascii_digit() || ch == '.' {
                 res.add_annotation(AnnotationType::Digit, idx..idx.saturating_add(1));
             }
         });

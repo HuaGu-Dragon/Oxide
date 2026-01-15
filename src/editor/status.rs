@@ -38,7 +38,10 @@ impl UiComponent for StatusBar {
         let modified_indicator = self.status.modified_indicator();
         let line_count = self.status.line_count();
 
-        let beginning = format!("{} - {line_count} {modified_indicator}", self.status.file);
+        let beginning = format!(
+            "{} - {line_count} {modified_indicator}",
+            self.status.file_info
+        );
         let position_indicator = self.status.position_indicator();
         let reminder_len = (self.width as usize).saturating_sub(beginning.width());
 

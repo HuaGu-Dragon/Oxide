@@ -1,4 +1,8 @@
-use std::panic;
+use std::{
+    fmt::Display,
+    panic,
+    path::{Path, PathBuf},
+};
 
 use clap::Parser;
 use crossterm::event::{Event, read};
@@ -36,11 +40,63 @@ enum PromptType {
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
+enum FileType {
+    Rust,
+    #[default]
+    Text,
+}
+
+impl Display for FileType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FileType::Rust => write!(f, "Rust"),
+            FileType::Text => write!(f, "Text"),
+        }
+    }
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct FileInfo {
+    file: String,
+    file_ty: FileType,
+}
+
+impl Display for FileInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} | {}", self.file, self.file_ty)
+    }
+}
+
+impl From<&Option<PathBuf>> for FileInfo {
+    fn from(value: &Option<PathBuf>) -> Self {
+        let file_ty = if value
+            .as_deref()
+            .and_then(Path::extension)
+            .map(|extension| extension.eq("rs"))
+            .unwrap_or(false)
+        {
+            FileType::Rust
+        } else {
+            FileType::Text
+        };
+        Self {
+            file: value
+                .as_deref()
+                .and_then(Path::file_name)
+                .and_then(|s| s.to_str())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| String::from("[No Name]")),
+            file_ty,
+        }
+    }
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct DocumentStatus {
     total_lines: usize,
     current_line: usize,
     modified: bool,
-    file: String,
+    file_info: FileInfo,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -242,7 +298,7 @@ impl Editor {
     fn refresh_status(&mut self) {
         let status = self.view.get_status();
 
-        let title = &status.file;
+        let title = &status.file_info.file;
 
         if title != &self.title && terminal::set_title(format!("{} - {NAME}", title)).is_ok() {
             self.title = title.to_string()

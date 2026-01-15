@@ -1,11 +1,8 @@
-use std::{
-    fmt::Display,
-    path::{Path, PathBuf},
-};
+use std::{fmt::Display, path::PathBuf};
 
 use crate::{
     editor::{
-        DocumentStatus, Size,
+        DocumentStatus, FileInfo, Size,
         event::Direction,
         ui::UiComponent,
         view::{
@@ -72,14 +69,7 @@ impl View {
             total_lines: self.buffer.len(),
             current_line: self.cursor.location().line_index,
             modified: self.buffer.dirty,
-            file: self
-                .buffer
-                .file
-                .as_deref()
-                .and_then(Path::file_name)
-                .and_then(|s| s.to_str())
-                .map(|s| s.to_string())
-                .unwrap_or_else(|| String::from("[No Name]")),
+            file_info: FileInfo::from(&self.buffer.file),
         }
     }
 

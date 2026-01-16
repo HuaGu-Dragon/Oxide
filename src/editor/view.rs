@@ -68,8 +68,8 @@ impl View {
         DocumentStatus {
             total_lines: self.buffer.len(),
             current_line: self.cursor.location().line_index,
-            modified: self.buffer.dirty,
-            file_info: FileInfo::from(&self.buffer.file),
+            modified: self.buffer.dirty(),
+            file_info: FileInfo::from(self.buffer.file()),
         }
     }
 
@@ -424,10 +424,7 @@ impl UiComponent for View {
 #[test]
 fn test_search() {
     let mut view = View {
-        buffer: Buffer {
-            lines: vec![Line::from("new new new new")],
-            ..Default::default()
-        },
+        buffer: Buffer::new(vec![Line::from("new new new new")]),
         ..Default::default()
     };
 

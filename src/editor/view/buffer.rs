@@ -1,4 +1,8 @@
-use std::{io::Write, ops::Deref, path::PathBuf};
+use std::{
+    io::Write,
+    ops::Deref,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Context;
 
@@ -6,9 +10,9 @@ use crate::editor::view::{cursor::Location, line::Line};
 
 #[derive(Default)]
 pub struct Buffer {
-    pub file: Option<PathBuf>,
-    pub dirty: bool,
-    pub(crate) lines: Vec<Line>,
+    file: Option<PathBuf>,
+    dirty: bool,
+    lines: Vec<Line>,
 }
 
 impl Buffer {
@@ -148,6 +152,14 @@ impl Buffer {
         }
         None
     }
+
+    pub fn file(&self) -> Option<&Path> {
+        self.file.as_deref()
+    }
+
+    pub fn dirty(&self) -> bool {
+        self.dirty
+    }
 }
 
 impl Deref for Buffer {
@@ -158,72 +170,86 @@ impl Deref for Buffer {
     }
 }
 
-#[test]
-fn test_search() {
-    let buffer = Buffer {
-        lines: vec![Line::from("Test: create a new file.")],
-        ..Default::default()
-    };
-    assert_eq!(
-        buffer.search_forward(
-            "new",
-            Location {
+#[cfg(test)]
+mod tests {
+    use crate::editor::view::{buffer::Buffer, cursor::Location, line::Line};
+
+    impl Buffer {
+        pub fn new(lines: Vec<Line>) -> Self {
+            Self {
+                lines,
+                ..Default::default()
+            }
+        }
+    }
+
+    #[test]
+    fn test_search() {
+        let buffer = Buffer {
+            lines: vec![Line::from("Test: create a new file.")],
+            ..Default::default()
+        };
+        assert_eq!(
+            buffer.search_forward(
+                "new",
+                Location {
+                    grapheme_index: 0,
+                    line_index: 0
+                }
+            ),
+            Some(Location {
+                grapheme_index: 15,
+                line_index: 0
+            })
+        );
+
+        assert_eq!(
+            buffer.search_backward(
+                "new",
+                Location {
+                    grapheme_index: 23,
+                    line_index: 0
+                }
+            ),
+            Some(Location {
+                grapheme_index: 15,
+                line_index: 0
+            })
+        )
+    }
+
+    #[test]
+    fn search_same() {
+        let buffer = Buffer {
+            lines: vec![Line::from("new new new new")],
+            ..Default::default()
+        };
+        assert_eq!(
+            buffer.search_forward(
+                "new",
+                Location {
+                    grapheme_index: 0,
+                    line_index: 0
+                }
+            ),
+            Some(Location {
                 grapheme_index: 0,
                 line_index: 0
-            }
-        ),
-        Some(Location {
-            grapheme_index: 15,
-            line_index: 0
-        })
-    );
+            })
+        );
 
-    assert_eq!(
-        buffer.search_backward(
-            "new",
-            Location {
-                grapheme_index: 23,
+        assert_eq!(
+            buffer.search_backward(
+                "new",
+                Location {
+                    grapheme_index: 0,
+                    line_index: 0
+                }
+            ),
+            Some(Location {
+                grapheme_index: 12,
                 line_index: 0
-            }
-        ),
-        Some(Location {
-            grapheme_index: 15,
-            line_index: 0
-        })
-    )
-}
-
-#[test]
-fn search_same() {
-    let buffer = Buffer {
-        lines: vec![Line::from("new new new new")],
-        ..Default::default()
-    };
-    assert_eq!(
-        buffer.search_forward(
-            "new",
-            Location {
-                grapheme_index: 0,
-                line_index: 0
-            }
-        ),
-        Some(Location {
-            grapheme_index: 0,
-            line_index: 0
-        })
-    );
-
-    assert_eq!(
-        buffer.search_backward(
-            "new",
-            Location {
-                grapheme_index: 0,
-                line_index: 0
-            }
-        ),
-        Some(Location {
-            grapheme_index: 12,
-            line_index: 0
-        })
-    )
+            })
+        )
+    }
 }

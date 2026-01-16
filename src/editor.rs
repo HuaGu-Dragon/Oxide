@@ -1,8 +1,4 @@
-use std::{
-    fmt::Display,
-    panic,
-    path::{Path, PathBuf},
-};
+use std::{fmt::Display, panic, path::Path};
 
 use clap::Parser;
 use crossterm::event::{Event, read};
@@ -67,10 +63,9 @@ impl Display for FileInfo {
     }
 }
 
-impl From<&Option<PathBuf>> for FileInfo {
-    fn from(value: &Option<PathBuf>) -> Self {
+impl From<Option<&Path>> for FileInfo {
+    fn from(value: Option<&Path>) -> Self {
         let file_ty = if value
-            .as_deref()
             .and_then(Path::extension)
             .map(|extension| extension.eq("rs"))
             .unwrap_or(false)
@@ -81,7 +76,6 @@ impl From<&Option<PathBuf>> for FileInfo {
         };
         Self {
             file: value
-                .as_deref()
                 .and_then(Path::file_name)
                 .and_then(|s| s.to_str())
                 .map(|s| s.to_string())

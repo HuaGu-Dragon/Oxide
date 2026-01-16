@@ -16,6 +16,7 @@ use crate::{
 
 mod buffer;
 mod cursor;
+pub mod highlighter;
 pub mod line;
 
 const NAME: &str = env!("CARGO_PKG_NAME");

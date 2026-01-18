@@ -1,12 +1,15 @@
 use std::{
     io::Write,
-    ops::Deref,
+    ops::{Deref, Range},
     path::{Path, PathBuf},
 };
 
 use anyhow::Context;
 
-use crate::editor::view::{cursor::Location, line::Line};
+use crate::editor::{
+    annotated::AnnotatedString,
+    view::{cursor::Location, highlighter::Highlighter, line::Line},
+};
 
 #[derive(Default)]
 pub struct Buffer {
@@ -159,6 +162,23 @@ impl Buffer {
 
     pub fn dirty(&self) -> bool {
         self.dirty
+    }
+
+    pub fn get_highlight_substring(
+        &self,
+        line_idx: usize,
+        range: Range<usize>,
+        highlighter: &Highlighter,
+    ) -> Option<AnnotatedString> {
+        self.lines.get(line_idx).map(|line| {
+            line.get_annotated_visiable_string(range, highlighter.get_annotations(line_idx))
+        })
+    }
+
+    pub fn highlight(&self, line_idx: usize, highlighter: &mut Highlighter) {
+        if let Some(line) = self.lines.get(line_idx) {
+            highlighter.highlight(line_idx, line);
+        }
     }
 }
 

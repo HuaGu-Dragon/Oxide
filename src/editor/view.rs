@@ -8,6 +8,7 @@ use crate::{
         view::{
             buffer::Buffer,
             cursor::{Cursor, Location},
+            highlighter::Highlighter,
             line::Line,
         },
     },
@@ -204,31 +205,34 @@ impl View {
             std::cmp::min(self.cursor.location().line_index, self.buffer.len());
     }
 
-    fn render_buffer(&self) {
+    fn render_buffer(&self, origin_row: u16) {
         let (cols, rows) = self.size();
+        let end_y = rows.saturating_add(origin_row);
         let (left, top) = self.offset.pos();
 
-        for row in 0..rows {
-            let line_index = top.saturating_add(row as usize);
-            if let Some(text) = self.buffer.get(line_index) {
-                let right = left.saturating_add(cols as usize);
-                let query = self
-                    .search_info
-                    .as_ref()
-                    .map(|search_info| search_info.query());
+        let query = self.search_info.as_ref().map(SearchInfo::query);
+        let selected_match = query.is_some().then_some(self.cursor.location());
+        let mut highlighter = Highlighter::new(query, selected_match);
 
-                let select_match = (self.cursor.location().line_index == line_index
-                    && query.is_some())
-                .then_some(self.cursor.location().grapheme_index);
+        for row in 0..top.saturating_add(rows as usize) {
+            self.buffer.highlight(row, &mut highlighter);
+        }
 
-                let _ = terminal::print_annotated_row(
-                    row,
-                    text.get_annotated_visiable_string(left..right, query, select_match),
-                );
-                // Self::render_line(row, text.get_visable_graphemes(left..right));
+        for row in origin_row..end_y {
+            let line_index = top
+                .saturating_add(row as usize)
+                .saturating_add(origin_row as usize);
+            let right = left.saturating_add(cols as usize);
+            if let Some(annotation_string) =
+                self.buffer
+                    .get_highlight_substring(line_index, left..right, &highlighter)
+            {
+                let _ = terminal::print_annotated_row(row, annotation_string);
             } else {
                 Self::render_line(row, "~");
             }
+
+            // Self::render_line(row, text.get_visable_graphemes(left..right));
         }
     }
 
@@ -407,7 +411,7 @@ impl UiComponent for View {
         self.scroll_buffer();
     }
 
-    fn draw(&mut self, _y: u16) -> anyhow::Result<()> {
+    fn draw(&mut self, y: u16) -> anyhow::Result<()> {
         if self.size.height == 0 {
             anyhow::bail!("terminal size is zero")
         }
@@ -415,7 +419,7 @@ impl UiComponent for View {
         if self.buffer.is_empty() {
             self.render_welcome();
         } else {
-            self.render_buffer();
+            self.render_buffer(y);
         }
 
         Ok(())

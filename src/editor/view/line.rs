@@ -6,7 +6,7 @@ use std::{
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::editor::annotated::{AnnotatedString, annotation::AnnotationType};
+use crate::editor::annotated::{AnnotatedString, annotation::Annotation};
 
 #[derive(Debug, Clone, Copy)]
 enum GraphemeWidth {
@@ -58,54 +58,20 @@ impl Display for Line {
 
 impl Line {
     pub fn get_visable_graphemes(&self, range: Range<usize>) -> String {
-        self.get_annotated_visiable_string(range, None, None)
-            .to_string()
+        self.get_annotated_visiable_string(range, None).to_string()
     }
 
     pub fn get_annotated_visiable_string(
         &self,
         range: Range<usize>,
-        query: Option<&str>,
-        select_match: Option<usize>,
+        annotations: Option<&Vec<Annotation>>,
     ) -> AnnotatedString {
         let mut res = AnnotatedString::from(&self.string[..]);
 
-        let mut skip = 0;
-        self.string.chars().enumerate().for_each(|(idx, ch)| {
-            if skip > 0 {
-                skip -= 1;
-                return;
+        if let Some(annotations) = annotations {
+            for annotation in annotations {
+                res.add_annotation(annotation.annotation_type, annotation.bytes.clone());
             }
-            if ch.is_ascii_digit() || ch == '.' {
-                res.add_annotation(AnnotationType::Digit, idx..idx.saturating_add(1));
-            }
-            if ch == '#' {
-                let end = idx.saturating_add(self[idx..].find('\n').unwrap_or(self.len()));
-                res.add_annotation(AnnotationType::Comment, idx..idx + end);
-                skip = end;
-            }
-        });
-
-        if let Some(query) = query
-            && !query.is_empty()
-        {
-            self.find_all(query, 0..self.string.len()).iter().for_each(
-                |(start_idx, grapheme_idx)| {
-                    if let Some(select_match) = select_match
-                        && *grapheme_idx == select_match
-                    {
-                        res.add_annotation(
-                            AnnotationType::SelectedMatch,
-                            *start_idx..start_idx.saturating_add(query.len()),
-                        );
-                        return;
-                    }
-                    res.add_annotation(
-                        AnnotationType::Match,
-                        *start_idx..start_idx.saturating_add(query.len()),
-                    );
-                },
-            );
         }
 
         let mut fragment_start = self.width();
@@ -429,7 +395,17 @@ fn test_search() {
 #[test]
 fn annotation() {
     let line = Line::from("Control");
-    let annotation = line.get_annotated_visiable_string(0..7, Some("o"), Some(2));
+    let annotation = vec![
+        Annotation {
+            annotation_type: crate::editor::annotated::annotation::AnnotationType::Match,
+            bytes: 1..2,
+        },
+        Annotation {
+            annotation_type: crate::editor::annotated::annotation::AnnotationType::Digit,
+            bytes: 5..6,
+        },
+    ];
+    let annotation = line.get_annotated_visiable_string(0..7, Some(&annotation));
     let mut iter = annotation.into_iter();
 
     assert!(iter.next().is_some()); // C

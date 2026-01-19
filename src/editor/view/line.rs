@@ -228,7 +228,7 @@ impl Line {
     }
 
     /// return: (bytes_index, grapheme_index)
-    fn find_all(&self, query: &str, range: Range<usize>) -> Vec<(usize, usize)> {
+    pub fn find_all(&self, query: &str, range: Range<usize>) -> Vec<(usize, usize)> {
         debug_assert!(range.start <= self.string.len());
         self.string
             .get(range.start..std::cmp::min(range.end, self.string.len()))

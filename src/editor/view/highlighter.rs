@@ -35,6 +35,19 @@ impl<'a> Highlighter<'a> {
         });
     }
 
+    fn highlight_match(&mut self, line: &Line, res: &mut Vec<Annotation>) {
+        if let Some(word) = self.match_word {
+            line.find_all(word, 0..line.len())
+                .iter()
+                .for_each(|(start, _)| {
+                    res.push(Annotation {
+                        annotation_type: AnnotationType::Match,
+                        bytes: *start..start.saturating_add(word.len()),
+                    });
+                });
+        }
+    }
+
     fn highlight_selected_match(&mut self, res: &mut Vec<Annotation>) {
         if let Some(selected_match) = self.selected_match
             && let Some(match_word) = self.match_word
@@ -52,6 +65,7 @@ impl<'a> Highlighter<'a> {
         let mut res = Vec::new();
         Self::hightlight_digits(line, &mut res);
 
+        self.highlight_match(line, &mut res);
         if let Some(selected_match) = self.selected_match
             && selected_match.line_index == idx
         {

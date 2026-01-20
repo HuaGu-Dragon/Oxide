@@ -6,6 +6,7 @@ use crate::editor::{
 };
 
 mod rust;
+mod search;
 mod syntax_highlight;
 
 pub struct Highlighter<'a> {

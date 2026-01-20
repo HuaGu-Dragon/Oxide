@@ -5,6 +5,9 @@ use crate::editor::{
     view::{cursor::Location, line::Line},
 };
 
+mod rust;
+mod syntax_highlight;
+
 pub struct Highlighter<'a> {
     match_word: Option<&'a str>,
     selected_match: Option<Location>,

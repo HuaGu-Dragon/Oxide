@@ -324,11 +324,15 @@ impl View {
     }
 
     pub fn save(&mut self) -> anyhow::Result<()> {
-        self.buffer.save()
+        self.buffer.save()?;
+        self.set_render(true);
+        Ok(())
     }
 
     pub fn save_as(&mut self, path: &str) -> anyhow::Result<()> {
-        self.buffer.save_as(path)
+        self.buffer.save_as(path)?;
+        self.set_render(true);
+        Ok(())
     }
 
     pub fn enter_search(&mut self) {

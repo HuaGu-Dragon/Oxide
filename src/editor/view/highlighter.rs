@@ -1,8 +1,13 @@
-use std::collections::HashMap;
-
 use crate::editor::{
-    annotated::annotation::{Annotation, AnnotationType},
-    view::{cursor::Location, line::Line},
+    FileType,
+    annotated::annotation::Annotation,
+    view::{
+        cursor::Location,
+        highlighter::{
+            rust::RustHighlighter, search::SearchHighlighter, syntax_highlight::SyntaxHighlighter,
+        },
+        line::Line,
+    },
 };
 
 mod rust;
@@ -10,72 +15,51 @@ mod search;
 mod syntax_highlight;
 
 pub struct Highlighter<'a> {
-    match_word: Option<&'a str>,
-    selected_match: Option<Location>,
-    highlights: HashMap<usize, Vec<Annotation>>,
+    syntax: Option<Box<dyn SyntaxHighlighter>>,
+    search: SearchHighlighter<'a>,
+}
+
+fn create_syntax_highlighter(file_ty: FileType) -> Option<Box<dyn SyntaxHighlighter>> {
+    match file_ty {
+        FileType::Rust => Some(Box::<RustHighlighter>::default()),
+        FileType::Text => None,
+    }
 }
 
 impl<'a> Highlighter<'a> {
-    pub fn new(match_word: Option<&'a str>, selected_match: Option<Location>) -> Self {
+    pub fn new(
+        match_word: Option<&'a str>,
+        selected_match: Option<Location>,
+        file_ty: FileType,
+    ) -> Self {
         Self {
-            match_word,
-            selected_match,
-            highlights: HashMap::new(),
+            syntax: create_syntax_highlighter(file_ty),
+            search: SearchHighlighter::new(match_word, selected_match),
         }
     }
 
-    pub fn get_annotations(&self, idx: usize) -> Option<&Vec<Annotation>> {
-        self.highlights.get(&idx)
-    }
-
-    pub fn hightlight_digits(line: &Line, res: &mut Vec<Annotation>) {
-        line.chars().enumerate().for_each(|(idx, ch)| {
-            if ch.is_ascii_digit() {
-                res.push(Annotation {
-                    annotation_type: AnnotationType::Digit,
-                    bytes: idx..idx.saturating_add(1),
-                });
-            }
-        });
-    }
-
-    fn highlight_match(&mut self, line: &Line, res: &mut Vec<Annotation>) {
-        if let Some(word) = self.match_word {
-            line.find_all(word, 0..line.len())
-                .iter()
-                .for_each(|(start, _)| {
-                    res.push(Annotation {
-                        annotation_type: AnnotationType::Match,
-                        bytes: *start..start.saturating_add(word.len()),
-                    });
-                });
+    pub fn get_annotations(&self, line_idx: usize) -> Vec<Annotation> {
+        let mut annotations = if let Some(search) = self.search.get_annotations(line_idx) {
+            search.clone()
+        } else {
+            vec![]
+        };
+        if let Some(ref syntax_highlight) = self.syntax {
+            annotations.extend(
+                syntax_highlight
+                    .get_annotations(line_idx)
+                    .cloned()
+                    .unwrap_or_default(),
+            );
         }
-    }
 
-    fn highlight_selected_match(&mut self, res: &mut Vec<Annotation>) {
-        if let Some(selected_match) = self.selected_match
-            && let Some(match_word) = self.match_word
-            && !match_word.is_empty()
-        {
-            let start = selected_match.grapheme_index;
-            res.push(Annotation {
-                annotation_type: AnnotationType::SelectedMatch,
-                bytes: start..start.saturating_add(match_word.len()),
-            });
-        }
+        annotations
     }
 
     pub fn highlight(&mut self, idx: usize, line: &Line) {
-        let mut res = Vec::new();
-        Self::hightlight_digits(line, &mut res);
-
-        self.highlight_match(line, &mut res);
-        if let Some(selected_match) = self.selected_match
-            && selected_match.line_index == idx
-        {
-            self.highlight_selected_match(&mut res);
+        if let Some(ref mut syntax_highlight) = self.syntax {
+            syntax_highlight.highlight(idx, line);
         }
-
-        self.highlights.insert(idx, res);
+        self.search.highlight(idx, line);
     }
 }

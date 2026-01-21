@@ -35,7 +35,7 @@ enum PromptType {
     None,
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 enum FileType {
     Rust,
     #[default]
@@ -63,10 +63,10 @@ impl Display for FileInfo {
     }
 }
 
-impl From<Option<&Path>> for FileInfo {
-    fn from(value: Option<&Path>) -> Self {
+impl From<&Path> for FileInfo {
+    fn from(value: &Path) -> Self {
         let file_ty = if value
-            .and_then(Path::extension)
+            .extension()
             .map(|extension| extension.eq("rs"))
             .unwrap_or(false)
         {
@@ -76,12 +76,21 @@ impl From<Option<&Path>> for FileInfo {
         };
         Self {
             file: value
-                .and_then(Path::file_name)
+                .file_name()
                 .and_then(|s| s.to_str())
                 .map(|s| s.to_string())
                 .unwrap_or_else(|| String::from("[No Name]")),
             file_ty,
         }
+    }
+}
+
+impl From<Option<&Path>> for FileInfo {
+    fn from(value: Option<&Path>) -> Self {
+        value.map(|path| path.into()).unwrap_or(Self {
+            file: String::from("[No Name]"),
+            file_ty: FileType::Text,
+        })
     }
 }
 

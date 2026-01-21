@@ -212,7 +212,8 @@ impl View {
 
         let query = self.search_info.as_ref().map(SearchInfo::query);
         let selected_match = query.is_some().then_some(self.cursor.location());
-        let mut highlighter = Highlighter::new(query, selected_match);
+        let mut highlighter =
+            Highlighter::new(query, selected_match, self.get_status().file_info.file_ty);
 
         for row in 0..top.saturating_add(rows as usize) {
             self.buffer.highlight(row, &mut highlighter);

@@ -171,7 +171,7 @@ impl Buffer {
         highlighter: &Highlighter,
     ) -> Option<AnnotatedString> {
         self.lines.get(line_idx).map(|line| {
-            line.get_annotated_visiable_string(range, highlighter.get_annotations(line_idx))
+            line.get_annotated_visiable_string(range, Some(&highlighter.get_annotations(line_idx)))
         })
     }
 

@@ -26,7 +26,7 @@ impl From<AnnotationType> for Attribute {
                     b: 0,
                 }),
             },
-            AnnotationType::Digit => Self {
+            AnnotationType::Number => Self {
                 foreground: Some(Color::White),
                 background: Some(Color::Rgb {
                     r: 255,

@@ -15,7 +15,7 @@ impl RustHighlighter {
         line.chars().enumerate().for_each(|(idx, ch)| {
             if ch.is_ascii_digit() {
                 res.push(Annotation {
-                    annotation_type: AnnotationType::Digit,
+                    annotation_type: AnnotationType::Number,
                     bytes: idx..idx.saturating_add(1),
                 });
             }

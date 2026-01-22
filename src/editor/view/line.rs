@@ -401,7 +401,7 @@ fn annotation() {
             bytes: 1..2,
         },
         Annotation {
-            annotation_type: crate::editor::annotated::annotation::AnnotationType::Digit,
+            annotation_type: crate::editor::annotated::annotation::AnnotationType::Number,
             bytes: 5..6,
         },
     ];

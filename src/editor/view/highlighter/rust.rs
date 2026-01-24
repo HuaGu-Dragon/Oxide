@@ -12,9 +12,33 @@ pub struct RustHighlighter {
     highlights: HashMap<usize, Vec<Annotation>>,
 }
 
+fn is_numeric_literal(input: &str) -> bool {
+    if input.len() < 3 {
+        return false;
+    }
+
+    let mut chars = input.chars();
+    if chars.next() != Some('0') {
+        return false;
+    }
+
+    let base = match chars.next() {
+        Some('b' | 'B') => 2,
+        Some('o' | 'O') => 8,
+        Some('x' | 'X') => 16,
+        _ => return false,
+    };
+
+    chars.all(|c| c.is_digit(base))
+}
+
 fn is_valid_number(input: &str) -> bool {
     if input.is_empty() {
         return false;
+    }
+
+    if is_numeric_literal(input) {
+        return true;
     }
 
     let mut chars = input.chars();

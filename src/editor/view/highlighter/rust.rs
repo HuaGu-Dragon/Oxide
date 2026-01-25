@@ -7,6 +7,61 @@ use crate::editor::{
     view::{highlighter::syntax_highlight::SyntaxHighlighter, line::Line},
 };
 
+const KEYWORDS: [&str; 52] = [
+    "Self",
+    "abstract",
+    "async",
+    "await",
+    "become",
+    "box",
+    "break",
+    "const",
+    "continue",
+    "crate",
+    "do",
+    "dyn",
+    "else",
+    "enum",
+    "extern",
+    "false",
+    "final",
+    "fn",
+    "for",
+    "if",
+    "impl",
+    "in",
+    "let",
+    "loop",
+    "macro",
+    "macro_rules",
+    "match",
+    "mod",
+    "move",
+    "mut",
+    "override",
+    "priv",
+    "pub",
+    "ref",
+    "return",
+    "self",
+    "static",
+    "struct",
+    "super",
+    "trait",
+    "true",
+    "try",
+    "type",
+    "typeof",
+    "union",
+    "unsafe",
+    "unsized",
+    "use",
+    "virtual",
+    "where",
+    "while",
+    "yield",
+];
+
 #[derive(Default)]
 pub struct RustHighlighter {
     highlights: HashMap<usize, Vec<Annotation>>,
@@ -93,6 +148,11 @@ impl RustHighlighter {
             if is_valid_number(word) {
                 res.push(Annotation {
                     annotation_type: AnnotationType::Number,
+                    bytes: idx..idx.saturating_add(word.len()),
+                });
+            } else if KEYWORDS.contains(&word) {
+                res.push(Annotation {
+                    annotation_type: AnnotationType::Keyword,
                     bytes: idx..idx.saturating_add(word.len()),
                 });
             }

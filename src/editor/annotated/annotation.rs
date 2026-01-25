@@ -12,4 +12,5 @@ pub enum AnnotationType {
     SelectedMatch,
     Number,
     Comment,
+    Keyword,
 }

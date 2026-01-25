@@ -142,20 +142,20 @@ fn is_valid_number(input: &str) -> bool {
     prev_was_digit
 }
 
-fn add_annotation(word: &str, annotations: &mut Vec<Annotation>, ty: AnnotationType, idx: usize) {
-    annotations.push(Annotation {
-        annotation_type: ty,
-        bytes: idx..idx.saturating_add(word.len()),
-    });
-}
-
 impl RustHighlighter {
     fn highlight_number(&mut self, line: &Line, res: &mut Vec<Annotation>) {
         for (idx, word) in line.split_word_bound_indices() {
+            let mut add_annotation = |ty| {
+                res.push(Annotation {
+                    annotation_type: ty,
+                    bytes: idx..idx.saturating_add(word.len()),
+                });
+            };
+
             if is_valid_number(word) {
-                add_annotation(word, res, AnnotationType::Number, idx);
+                add_annotation(AnnotationType::Number);
             } else if KEYWORDS.contains(&word) {
-                add_annotation(word, res, AnnotationType::Keyword, idx);
+                add_annotation(AnnotationType::Keyword);
             }
         }
     }

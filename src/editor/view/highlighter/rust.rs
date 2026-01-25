@@ -62,6 +62,11 @@ const KEYWORDS: [&str; 52] = [
     "yield",
 ];
 
+const TYPES: [&str; 23] = [
+    "i8", "i16", "i32", "i64", "i128", "isize", "u8", "u16", "u32", "u64", "u128", "usize", "f32",
+    "f64", "bool", "char", "Option", "Result", "String", "str", "Vec", "HashMap", "VecDeque",
+];
+
 #[derive(Default)]
 pub struct RustHighlighter {
     highlights: HashMap<usize, Vec<Annotation>>,
@@ -156,6 +161,8 @@ impl RustHighlighter {
                 add_annotation(AnnotationType::Number);
             } else if KEYWORDS.contains(&word) {
                 add_annotation(AnnotationType::Keyword);
+            } else if TYPES.contains(&word) {
+                add_annotation(AnnotationType::Type);
             }
         }
     }

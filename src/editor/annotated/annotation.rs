@@ -13,4 +13,5 @@ pub enum AnnotationType {
     Number,
     Comment,
     Keyword,
+    Type,
 }

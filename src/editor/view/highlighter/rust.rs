@@ -143,7 +143,7 @@ fn is_valid_number(input: &str) -> bool {
 }
 
 impl RustHighlighter {
-    fn highlight_number(&mut self, line: &Line, res: &mut Vec<Annotation>) {
+    fn highlight(&mut self, line: &Line, res: &mut Vec<Annotation>) {
         for (idx, word) in line.split_word_bound_indices() {
             let mut add_annotation = |ty| {
                 res.push(Annotation {
@@ -164,7 +164,7 @@ impl RustHighlighter {
 impl SyntaxHighlighter for RustHighlighter {
     fn highlight(&mut self, idx: usize, line: &crate::editor::view::line::Line) {
         let mut res = vec![];
-        self.highlight_number(line, &mut res);
+        self.highlight(line, &mut res);
         self.highlights.insert(idx, res);
     }
 

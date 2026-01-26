@@ -5,6 +5,12 @@ pub struct Annotation {
     pub annotation_type: AnnotationType,
     pub bytes: Range<usize>,
 }
+impl Annotation {
+    pub fn shift(&mut self, idx: usize) {
+        self.bytes.start = self.bytes.start.saturating_add(idx);
+        self.bytes.end = self.bytes.end.saturating_add(idx);
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum AnnotationType {
@@ -14,4 +20,5 @@ pub enum AnnotationType {
     Comment,
     Keyword,
     Type,
+    Char,
 }

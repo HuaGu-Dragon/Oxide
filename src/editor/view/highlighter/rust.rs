@@ -149,23 +149,69 @@ fn is_valid_number(input: &str) -> bool {
 
 impl RustHighlighter {
     fn highlight(&mut self, line: &Line, res: &mut Vec<Annotation>) {
-        for (idx, word) in line.split_word_bound_indices() {
-            let mut add_annotation = |ty| {
-                res.push(Annotation {
-                    annotation_type: ty,
-                    bytes: idx..idx.saturating_add(word.len()),
-                });
-            };
+        let mut input = line.split_word_bound_indices().peekable();
+        while let Some((idx, _)) = input.next() {
+            let remainder = &line[idx..];
 
-            if is_valid_number(word) {
-                add_annotation(AnnotationType::Number);
-            } else if KEYWORDS.contains(&word) {
-                add_annotation(AnnotationType::Keyword);
-            } else if TYPES.contains(&word) {
-                add_annotation(AnnotationType::Type);
+            if let Some(mut anntation) = annotate_char(remainder)
+                .or_else(|| annotate_keyword(remainder))
+                .or_else(|| annotate_number(remainder))
+                .or_else(|| annotate_type(remainder))
+            {
+                anntation.shift(idx);
+
+                res.push(anntation);
             }
         }
     }
+}
+
+fn annotate_next_word(
+    input: &str,
+    ty: AnnotationType,
+    is_valid: impl Fn(&str) -> bool,
+) -> Option<Annotation> {
+    if let Some(word) = input.split_word_bounds().next() {
+        if is_valid(word) {
+            return Some(Annotation {
+                annotation_type: ty,
+                bytes: 0..word.len(),
+            });
+        }
+    }
+
+    None
+}
+
+fn annotate_number(input: &str) -> Option<Annotation> {
+    annotate_next_word(input, AnnotationType::Number, is_valid_number)
+}
+
+fn annotate_keyword(input: &str) -> Option<Annotation> {
+    annotate_next_word(input, AnnotationType::Type, |word| KEYWORDS.contains(&word))
+}
+
+fn annotate_type(input: &str) -> Option<Annotation> {
+    annotate_next_word(input, AnnotationType::Type, |word| TYPES.contains(&word))
+}
+
+fn annotate_char(input: &str) -> Option<Annotation> {
+    let mut iter = input.split_word_bound_indices().peekable();
+
+    if let Some((_, "\'")) = iter.next() {
+        if let Some((_, "\\")) = iter.peek() {
+            iter.next();
+        }
+        iter.next();
+
+        if let Some((idx, "\'")) = iter.next() {
+            return Some(Annotation {
+                annotation_type: AnnotationType::Char,
+                bytes: 0..idx.saturating_add(1),
+            });
+        }
+    }
+    None
 }
 
 impl SyntaxHighlighter for RustHighlighter {

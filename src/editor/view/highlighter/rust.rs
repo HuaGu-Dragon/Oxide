@@ -149,8 +149,8 @@ fn is_valid_number(input: &str) -> bool {
 
 impl RustHighlighter {
     fn highlight(&mut self, line: &Line, res: &mut Vec<Annotation>) {
-        let mut input = line.split_word_bound_indices().peekable();
-        while let Some((idx, _)) = input.next() {
+        let input = line.split_word_bound_indices();
+        for (idx, _) in input {
             let remainder = &line[idx..];
 
             if let Some(mut anntation) = annotate_char(remainder)
@@ -171,13 +171,13 @@ fn annotate_next_word(
     ty: AnnotationType,
     is_valid: impl Fn(&str) -> bool,
 ) -> Option<Annotation> {
-    if let Some(word) = input.split_word_bounds().next() {
-        if is_valid(word) {
-            return Some(Annotation {
-                annotation_type: ty,
-                bytes: 0..word.len(),
-            });
-        }
+    if let Some(word) = input.split_word_bounds().next()
+        && is_valid(word)
+    {
+        return Some(Annotation {
+            annotation_type: ty,
+            bytes: 0..word.len(),
+        });
     }
 
     None

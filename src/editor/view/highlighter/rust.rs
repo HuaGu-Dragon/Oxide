@@ -149,18 +149,25 @@ fn is_valid_number(input: &str) -> bool {
 
 impl RustHighlighter {
     fn highlight(&mut self, line: &Line, res: &mut Vec<Annotation>) {
-        let input = line.split_word_bound_indices();
-        for (idx, _) in input {
+        let mut input = line.split_word_bound_indices().peekable();
+        while let Some((idx, _)) = input.next() {
             let remainder = &line[idx..];
 
-            if let Some(mut anntation) = annotate_char(remainder)
+            if let Some(mut annotation) = annotate_char(remainder)
                 .or_else(|| annotate_keyword(remainder))
                 .or_else(|| annotate_number(remainder))
                 .or_else(|| annotate_type(remainder))
             {
-                anntation.shift(idx);
+                annotation.shift(idx);
 
-                res.push(anntation);
+                while let Some((next_idx, _)) = input.peek() {
+                    if next_idx >= &annotation.bytes.end {
+                        break;
+                    }
+                    input.next();
+                }
+
+                res.push(annotation);
             }
         }
     }

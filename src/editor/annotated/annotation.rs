@@ -21,4 +21,5 @@ pub enum AnnotationType {
     Keyword,
     Type,
     Char,
+    Lifetime,
 }

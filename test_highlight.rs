@@ -19,3 +19,10 @@
 // _100_1, 100_, 1_00_, _
 // Invalid Literals:
 // 0b102 0x1G, 1o108, 0xxx
+
+// Valid/Should be highlighted as char:
+// '1' 'a' 'b' '👍' '\x1b', 'notacharacter' '\'', '\\' '1''2''3' '1'notchar'2'
+// Should be highlighted as lifetime specifier:
+// 'a 'this_is_cool <'abc> '123
+// Invalid/ should not be (fully) highlighted:
+// "a", b' '   'invalid-specifier

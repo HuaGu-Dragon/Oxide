@@ -154,6 +154,7 @@ impl RustHighlighter {
             let remainder = &line[idx..];
 
             if let Some(mut annotation) = annotate_char(remainder)
+                .or_else(|| annotate_lifetime(remainder))
                 .or_else(|| annotate_keyword(remainder))
                 .or_else(|| annotate_number(remainder))
                 .or_else(|| annotate_type(remainder))
@@ -200,6 +201,21 @@ fn annotate_keyword(input: &str) -> Option<Annotation> {
 
 fn annotate_type(input: &str) -> Option<Annotation> {
     annotate_next_word(input, AnnotationType::Type, |word| TYPES.contains(&word))
+}
+
+fn annotate_lifetime(input: &str) -> Option<Annotation> {
+    let mut iter = input.split_word_bound_indices();
+
+    if let Some((_, "'")) = iter.next()
+        && let Some((idx, lifetime)) = iter.next()
+    {
+        return Some(Annotation {
+            annotation_type: AnnotationType::Lifetime,
+            bytes: 0..idx.saturating_add(lifetime.len()),
+        });
+    }
+
+    None
 }
 
 fn annotate_char(input: &str) -> Option<Annotation> {

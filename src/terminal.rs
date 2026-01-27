@@ -164,7 +164,7 @@ fn set_attribute(annotation: AnnotationType) -> anyhow::Result<()> {
         queue!(stdout(), style::SetForegroundColor(foreground)).context("set foreground color")?;
     }
     if let Some(background) = attribute.background {
-        queue!(stdout(), style::SetForegroundColor(background)).context("set background color")?;
+        queue!(stdout(), style::SetBackgroundColor(background)).context("set background color")?;
     }
 
     Ok(())

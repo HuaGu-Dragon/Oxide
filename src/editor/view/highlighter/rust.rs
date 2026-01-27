@@ -153,7 +153,8 @@ impl RustHighlighter {
         while let Some((idx, _)) = input.next() {
             let remainder = &line[idx..];
 
-            if let Some(mut annotation) = annotate_char(remainder)
+            if let Some(mut annotation) = annotate_comment(remainder)
+                .or_else(|| annotate_char(remainder))
                 .or_else(|| annotate_lifetime(remainder))
                 .or_else(|| annotate_keyword(remainder))
                 .or_else(|| annotate_number(remainder))
@@ -234,6 +235,17 @@ fn annotate_char(input: &str) -> Option<Annotation> {
             });
         }
     }
+    None
+}
+
+fn annotate_comment(input: &str) -> Option<Annotation> {
+    if input.starts_with("//") {
+        return Some(Annotation {
+            annotation_type: AnnotationType::Comment,
+            bytes: 0..input.len(),
+        });
+    }
+
     None
 }
 

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::editor::{
@@ -69,7 +67,7 @@ const TYPES: [&str; 23] = [
 
 #[derive(Default)]
 pub struct RustHighlighter {
-    highlights: HashMap<usize, Vec<Annotation>>,
+    highlights: Vec<Vec<Annotation>>,
 }
 
 fn is_numeric_literal(input: &str) -> bool {
@@ -250,13 +248,13 @@ fn annotate_comment(input: &str) -> Option<Annotation> {
 }
 
 impl SyntaxHighlighter for RustHighlighter {
-    fn highlight(&mut self, idx: usize, line: &crate::editor::view::line::Line) {
+    fn highlight(&mut self, _idx: usize, line: &crate::editor::view::line::Line) {
         let mut res = vec![];
         self.highlight(line, &mut res);
-        self.highlights.insert(idx, res);
+        self.highlights.push(res);
     }
 
     fn get_annotations(&self, line_idx: usize) -> Option<&Vec<Annotation>> {
-        self.highlights.get(&line_idx)
+        self.highlights.get(line_idx)
     }
 }

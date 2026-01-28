@@ -68,6 +68,7 @@ const TYPES: [&str; 23] = [
 #[derive(Default)]
 pub struct RustHighlighter {
     highlights: Vec<Vec<Annotation>>,
+    multiple_lines_comment: usize,
 }
 
 fn is_numeric_literal(input: &str) -> bool {
@@ -151,7 +152,9 @@ impl RustHighlighter {
         while let Some((idx, _)) = input.next() {
             let remainder = &line[idx..];
 
-            if let Some(mut annotation) = annotate_comment(remainder)
+            if let Some(mut annotation) = self
+                .annotate_multiple_comment(remainder)
+                .or_else(|| annotate_comment(remainder))
                 .or_else(|| annotate_char(remainder))
                 .or_else(|| annotate_lifetime(remainder))
                 .or_else(|| annotate_keyword(remainder))
@@ -170,6 +173,39 @@ impl RustHighlighter {
                 res.push(annotation);
             }
         }
+    }
+
+    fn annotate_multiple_comment(&mut self, input: &str) -> Option<Annotation> {
+        let mut chars = input.char_indices().peekable();
+
+        while let Some((_, c)) = chars.next() {
+            if c == '/'
+                && let Some((_, '*')) = chars.peek()
+            {
+                self.multiple_lines_comment = self.multiple_lines_comment.saturating_add(1);
+                chars.next();
+            } else if self.multiple_lines_comment == 0 {
+                return None;
+            } else if c == '*'
+                && let Some((idx, '/')) = chars.peek()
+            {
+                self.multiple_lines_comment = self.multiple_lines_comment.saturating_sub(1);
+
+                if self.multiple_lines_comment == 0 {
+                    return Some(Annotation {
+                        annotation_type: AnnotationType::Comment,
+                        bytes: 0..idx.saturating_add(1),
+                    });
+                }
+
+                chars.next();
+            }
+        }
+
+        (self.multiple_lines_comment > 0).then_some(Annotation {
+            annotation_type: AnnotationType::Comment,
+            bytes: 0..input.len(),
+        })
     }
 }
 

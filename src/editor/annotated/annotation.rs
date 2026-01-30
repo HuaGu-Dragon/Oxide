@@ -5,6 +5,7 @@ pub struct Annotation {
     pub annotation_type: AnnotationType,
     pub bytes: Range<usize>,
 }
+
 impl Annotation {
     pub fn shift(&mut self, idx: usize) {
         self.bytes.start = self.bytes.start.saturating_add(idx);
@@ -22,4 +23,5 @@ pub enum AnnotationType {
     Type,
     Char,
     Lifetime,
+    String,
 }

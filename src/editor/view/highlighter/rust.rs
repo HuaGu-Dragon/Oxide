@@ -69,6 +69,7 @@ const TYPES: [&str; 23] = [
 pub struct RustHighlighter {
     highlights: Vec<Vec<Annotation>>,
     multiple_lines_comment: usize,
+    multiple_str: bool,
 }
 
 fn is_numeric_literal(input: &str) -> bool {
@@ -147,6 +148,16 @@ fn is_valid_number(input: &str) -> bool {
 }
 
 impl RustHighlighter {
+    fn initial_annotation(&mut self, line: &Line) -> Option<Annotation> {
+        if self.multiple_str {
+            self.annotate_multiple_str(line)
+        } else if self.multiple_lines_comment > 0 {
+            self.annotate_multiple_comment(line)
+        } else {
+            None
+        }
+    }
+
     fn highlight(&mut self, line: &Line, res: &mut Vec<Annotation>) {
         let mut input = line.split_word_bound_indices().peekable();
         while let Some((idx, _)) = input.next() {
@@ -154,6 +165,7 @@ impl RustHighlighter {
 
             if let Some(mut annotation) = self
                 .annotate_multiple_comment(remainder)
+                .or_else(|| self.annotate_multiple_str(remainder))
                 .or_else(|| annotate_comment(remainder))
                 .or_else(|| annotate_char(remainder))
                 .or_else(|| annotate_lifetime(remainder))
@@ -173,6 +185,35 @@ impl RustHighlighter {
                 res.push(annotation);
             }
         }
+    }
+
+    fn annotate_multiple_str(&mut self, input: &str) -> Option<Annotation> {
+        let mut chars = input.char_indices();
+        while let Some((idx, c)) = chars.next() {
+            if c == '\\' && self.multiple_str {
+                chars.next();
+                continue;
+            }
+            if c == '"' {
+                if self.multiple_str {
+                    self.multiple_str = false;
+                    return Some(Annotation {
+                        annotation_type: AnnotationType::String,
+                        bytes: 0..idx.saturating_add(1),
+                    });
+                }
+                self.multiple_str = true;
+            }
+
+            if !self.multiple_str {
+                return None;
+            }
+        }
+
+        self.multiple_str.then_some(Annotation {
+            annotation_type: AnnotationType::String,
+            bytes: 0..input.len(),
+        })
     }
 
     fn annotate_multiple_comment(&mut self, input: &str) -> Option<Annotation> {

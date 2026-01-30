@@ -160,6 +160,17 @@ impl RustHighlighter {
 
     fn highlight(&mut self, line: &Line, res: &mut Vec<Annotation>) {
         let mut input = line.split_word_bound_indices().peekable();
+
+        if let Some(annotation) = self.initial_annotation(line) {
+            while let Some((next_idx, _)) = input.peek() {
+                if next_idx >= &annotation.bytes.end {
+                    break;
+                }
+                input.next();
+            }
+
+            res.push(annotation);
+        }
         while let Some((idx, _)) = input.next() {
             let remainder = &line[idx..];
 
@@ -327,6 +338,7 @@ fn annotate_comment(input: &str) -> Option<Annotation> {
 impl SyntaxHighlighter for RustHighlighter {
     fn highlight(&mut self, _idx: usize, line: &crate::editor::view::line::Line) {
         let mut res = vec![];
+
         self.highlight(line, &mut res);
         self.highlights.push(res);
     }

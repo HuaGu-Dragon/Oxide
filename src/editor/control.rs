@@ -38,10 +38,19 @@ impl Control {
                     self.mode = State::Insert;
                     Ok(Command::Switch(State::Insert))
                 }
+                (KeyCode::Char('i') | KeyCode::Char('I'), KeyModifiers::SHIFT) => {
+                    self.mode = State::Insert;
+                    Ok(Command::StartOfLine)
+                }
+                (KeyCode::Char('a') | KeyCode::Char('A'), KeyModifiers::SHIFT) => {
+                    self.mode = State::Insert;
+                    Ok(Command::EndOfLine)
+                }
                 (KeyCode::Char('k'), KeyModifiers::NONE) => Ok(Command::Move(Direction::Up)),
                 (KeyCode::Char('j'), KeyModifiers::NONE) => Ok(Command::Move(Direction::Down)),
                 (KeyCode::Char('h'), KeyModifiers::NONE) => Ok(Command::Move(Direction::Left)),
                 (KeyCode::Char('l'), KeyModifiers::NONE) => Ok(Command::Move(Direction::Right)),
+                (KeyCode::Char('w'), KeyModifiers::NONE) => Ok(Command::NextWord),
                 _ => anyhow::bail!("not yet implement"),
             },
             _ => anyhow::bail!("not yet implement"),

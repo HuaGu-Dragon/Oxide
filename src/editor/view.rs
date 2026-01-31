@@ -172,6 +172,7 @@ impl View {
             .buffer
             .get(self.cursor.location().line_index)
             .map_or(0, |line| line.grapheme_count());
+
         if self.cursor.location().grapheme_index < line_width {
             self.cursor.location_mut().grapheme_index += 1;
         } else {
@@ -182,6 +183,33 @@ impl View {
 
     pub fn move_to_start_of_line(&mut self) {
         self.cursor.location_mut().grapheme_index = 0;
+    }
+
+    pub fn move_to_next_word(&mut self) {
+        let idx = self
+            .buffer
+            .get(self.cursor.location().line_index)
+            .map_or(Some(0), |line| {
+                if self.cursor.location().grapheme_index == line.width() {
+                    None
+                } else {
+                    Some(
+                        line.search_forward(
+                            " ",
+                            self.cursor.location().grapheme_index.saturating_add(1),
+                        )
+                        .unwrap_or(line.width()),
+                    )
+                }
+            });
+
+        if let Some(idx) = idx {
+            self.cursor.location_mut().grapheme_index = idx;
+        } else {
+            self.move_down(1);
+            self.move_to_start_of_line();
+        }
+        self.scroll_buffer();
     }
 
     pub fn move_to_end_of_line(&mut self) {

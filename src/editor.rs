@@ -219,6 +219,7 @@ impl Editor {
             Command::Resize(_) | Command::Quit => unreachable!(),
             // TODO
             Command::Switch(_) => {}
+            Command::NextWord => self.view.move_to_next_word(),
         }
     }
 
@@ -247,6 +248,7 @@ impl Editor {
             // TODO
             Command::Switch(_) => {}
             Command::Resize(_) => unreachable!(),
+            Command::NextWord => {}
         }
     }
 
@@ -273,6 +275,7 @@ impl Editor {
             }
             // TODO
             Command::Switch(_) => {}
+            Command::NextWord => {}
         }
     }
     fn refresh_screen(&mut self) {

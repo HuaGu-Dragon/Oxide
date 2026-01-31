@@ -7,6 +7,7 @@ use crate::{
     Cli,
     editor::{
         command::CommandBar,
+        control::{Control, State},
         event::{Command, Direction},
         message::MessageBar,
         status::StatusBar,
@@ -18,6 +19,7 @@ use crate::{
 
 pub mod annotated;
 mod command;
+pub mod control;
 mod event;
 mod message;
 mod status;
@@ -103,7 +105,7 @@ pub struct DocumentStatus {
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-struct Size {
+pub struct Size {
     width: u16,
     height: u16,
 }
@@ -128,6 +130,7 @@ pub struct Editor {
     title: String,
     size: Size,
     quit_time: u8,
+    control: Control,
 }
 
 impl Editor {
@@ -181,7 +184,7 @@ impl Editor {
     }
 
     fn evalute_event(&mut self, event: Event) {
-        if let Ok(command) = Command::try_from(event) {
+        if let Ok(command) = self.control.evaluate(event) {
             if let Command::Resize(size) = command {
                 self.resize(size);
                 return;
@@ -214,6 +217,8 @@ impl Editor {
             Command::Search => self.set_prompt(PromptType::Search),
             Command::Dismiss => {}
             Command::Resize(_) | Command::Quit => unreachable!(),
+            // TODO
+            Command::Switch(_) => {}
         }
     }
 
@@ -226,7 +231,7 @@ impl Editor {
             }
             Command::Move(Direction::Up | Direction::Left) => self.view.search_prev(),
             Command::Move(Direction::Down | Direction::Right) => self.view.search_next(),
-            Command::Dismiss => {
+            Command::Dismiss | Command::Switch(State::Normal) => {
                 self.set_prompt(PromptType::None);
                 self.view.dismiss_search();
             }
@@ -239,6 +244,8 @@ impl Editor {
             | Command::EndOfLine
             | Command::Save
             | Command::Search => {}
+            // TODO
+            Command::Switch(_) => {}
             Command::Resize(_) => unreachable!(),
         }
     }
@@ -264,6 +271,8 @@ impl Editor {
                 self.save(Some(&file));
                 self.set_prompt(PromptType::None);
             }
+            // TODO
+            Command::Switch(_) => {}
         }
     }
     fn refresh_screen(&mut self) {

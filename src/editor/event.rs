@@ -1,7 +1,7 @@
 use anyhow::{Ok, anyhow};
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 
-use crate::editor::Size;
+use crate::editor::{Size, control::State};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
@@ -25,6 +25,7 @@ pub enum Command {
     Save,
     Search,
     Dismiss,
+    Switch(State),
 }
 
 impl TryFrom<Event> for Command {

@@ -197,7 +197,7 @@ impl Line {
             .position(|fragment| fragment.start_byte_idx >= byte_index)
     }
 
-    fn grapheme_index_to_byte_idx(&self, grapheme_index: usize) -> Option<usize> {
+    pub fn grapheme_index_to_byte_idx(&self, grapheme_index: usize) -> Option<usize> {
         self.fragments
             .get(grapheme_index)
             .map(|fragment| fragment.start_byte_idx)

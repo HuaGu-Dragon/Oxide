@@ -485,3 +485,22 @@ fn test_search() {
         }
     );
 }
+
+#[test]
+fn test_search_with_unicode() {
+    let line = "Symbols: ␣ (open box), ▯ (white vertical rectangle)";
+    let mut view = View {
+        buffer: Buffer::new(vec![Line::from(line)]),
+        ..Default::default()
+    };
+
+    view.enter_search();
+    view.search_forward("g");
+    assert_eq!(
+        view.cursor.location(),
+        Location {
+            grapheme_index: 47,
+            line_index: 0
+        }
+    );
+}

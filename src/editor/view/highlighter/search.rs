@@ -22,14 +22,12 @@ impl<'a> SearchHighlighter<'a> {
 
     fn highlight_match(&mut self, line: &Line, res: &mut Vec<Annotation>) {
         if let Some(word) = self.match_word {
-            line.find_all(word, 0..line.len())
-                .iter()
-                .for_each(|(start, _)| {
-                    res.push(Annotation {
-                        annotation_type: AnnotationType::Match,
-                        bytes: *start..start.saturating_add(word.len()),
-                    });
+            line.find_all(word, 0..line.len()).for_each(|(start, _)| {
+                res.push(Annotation {
+                    annotation_type: AnnotationType::Match,
+                    bytes: start..start.saturating_add(word.len()),
                 });
+            });
         }
     }
 

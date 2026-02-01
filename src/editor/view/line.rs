@@ -211,8 +211,8 @@ impl Line {
         }?;
 
         self.find_all(query, byte_index..self.string.len())
-            .first()
-            .map(|(_, grapheme_index)| *grapheme_index)
+            .next()
+            .map(|(_, grapheme_index)| grapheme_index)
     }
 
     pub fn search_backward(&self, query: &str, grapheme_index: usize) -> Option<usize> {
@@ -224,46 +224,54 @@ impl Line {
 
         self.find_all(query, 0..byte_index)
             .last()
-            .map(|(_, grapheme_index)| *grapheme_index)
+            .map(|(_, grapheme_index)| grapheme_index)
     }
 
     /// return: (bytes_index, grapheme_index)
-    pub fn find_all(&self, query: &str, range: Range<usize>) -> Vec<(usize, usize)> {
+    pub fn find_all(
+        &self,
+        query: &str,
+        range: Range<usize>,
+    ) -> impl Iterator<Item = (usize, usize)> {
         debug_assert!(range.start <= self.string.len());
         self.string
             .get(range.start..std::cmp::min(range.end, self.string.len()))
-            .map_or_else(Vec::new, |substr| {
-                let potential_matches = substr
-                    .match_indices(query)
-                    .map(|(idx, _)| idx.saturating_add(range.start));
+            .map_or_else(
+                || {
+                    // FIXME: There can't just use a std::iter::empty(), Since the rust can't know the type's size at compile time? And I don't want to use Box to have a dynamic size iterator.
+                    unreachable!()
+                },
+                move |substr| {
+                    let potential_matches = substr
+                        .match_indices(query)
+                        .map(move |(idx, _)| idx.saturating_add(range.start));
 
-                self.match_grapheme_clusters(potential_matches, query)
-            })
+                    self.match_grapheme_clusters(potential_matches, query)
+                },
+            )
     }
 
     fn match_grapheme_clusters(
         &self,
         matches: impl Iterator<Item = usize>,
         query: &str,
-    ) -> Vec<(usize, usize)> {
+    ) -> impl Iterator<Item = (usize, usize)> {
         let grapheme_count = query.graphemes(true).count();
 
-        matches
-            .filter_map(|idx| {
-                self.byte_idx_to_grapheme_index(idx)
-                    .and_then(|grapheme_idx| {
-                        self.fragments
-                            .get(grapheme_idx..grapheme_idx.saturating_add(grapheme_count))
-                            .and_then(|fragments| {
-                                let substr = fragments
-                                    .iter()
-                                    .map(|fragment| fragment.grapheme.as_str())
-                                    .collect::<String>();
-                                (substr == query).then_some((idx, grapheme_idx))
-                            })
-                    })
-            })
-            .collect()
+        matches.filter_map(move |idx| {
+            self.byte_idx_to_grapheme_index(idx)
+                .and_then(|grapheme_idx| {
+                    self.fragments
+                        .get(grapheme_idx..grapheme_idx.saturating_add(grapheme_count))
+                        .and_then(|fragments| {
+                            let substr = fragments
+                                .iter()
+                                .map(|fragment| fragment.grapheme.as_str())
+                                .collect::<String>();
+                            (substr == query).then_some((idx, grapheme_idx))
+                        })
+                })
+        })
     }
 }
 

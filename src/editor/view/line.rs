@@ -234,21 +234,13 @@ impl Line {
         range: Range<usize>,
     ) -> impl Iterator<Item = (usize, usize)> {
         debug_assert!(range.start <= self.string.len());
-        self.string
-            .get(range.start..std::cmp::min(range.end, self.string.len()))
-            .map_or_else(
-                || {
-                    // FIXME: There can't just use a std::iter::empty(), Since the rust can't know the type's size at compile time? And I don't want to use Box to have a dynamic size iterator.
-                    unreachable!()
-                },
-                move |substr| {
-                    let potential_matches = substr
-                        .match_indices(query)
-                        .map(move |(idx, _)| idx.saturating_add(range.start));
+        let substr = &self.string[range.start..std::cmp::min(range.end, self.string.len())];
 
-                    self.match_grapheme_clusters(potential_matches, query)
-                },
-            )
+        let potential_matches = substr
+            .match_indices(query)
+            .map(move |(idx, _)| idx.saturating_add(range.start));
+
+        self.match_grapheme_clusters(potential_matches, query)
     }
 
     fn match_grapheme_clusters(

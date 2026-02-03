@@ -198,6 +198,7 @@ impl View {
                             " ",
                             self.cursor.location().grapheme_index.saturating_add(1),
                         )
+                        .map(|n| n.saturating_add(1))
                         .unwrap_or(line.width()),
                     )
                 }
@@ -216,13 +217,17 @@ impl View {
         let idx = self
             .buffer
             .get(self.cursor.location().line_index)
-            .map_or(Some(0), |line| {
+            .and_then(|line| {
                 if self.cursor.location().grapheme_index == 0 {
                     None
                 } else {
                     Some(
-                        line.search_backward(" ", self.cursor.location().grapheme_index)
-                            .unwrap_or_default(),
+                        line.search_backward(
+                            " ",
+                            self.cursor.location().grapheme_index.saturating_sub(1),
+                        )
+                        .map(|n| n.saturating_add(1))
+                        .unwrap_or_default(),
                     )
                 }
             });

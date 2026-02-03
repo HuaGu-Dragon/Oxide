@@ -22,6 +22,7 @@ pub enum Command {
     StartOfLine,
     EndOfLine,
     NextWord,
+    PreviousWord,
     Enter,
     Save,
     Search,

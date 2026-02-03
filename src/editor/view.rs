@@ -212,6 +212,30 @@ impl View {
         self.scroll_buffer();
     }
 
+    pub fn move_to_previous_word(&mut self) {
+        let idx = self
+            .buffer
+            .get(self.cursor.location().line_index)
+            .map_or(Some(0), |line| {
+                if self.cursor.location().grapheme_index == 0 {
+                    None
+                } else {
+                    Some(
+                        line.search_backward(" ", self.cursor.location().grapheme_index)
+                            .unwrap_or_default(),
+                    )
+                }
+            });
+
+        if let Some(idx) = idx {
+            self.cursor.location_mut().grapheme_index = idx;
+        } else if self.cursor.location().line_index > 0 {
+            self.move_up(1);
+            self.move_to_end_of_line();
+        }
+        self.scroll_buffer();
+    }
+
     pub fn move_to_end_of_line(&mut self) {
         self.cursor.location_mut().grapheme_index = self
             .buffer

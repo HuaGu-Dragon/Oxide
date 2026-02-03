@@ -51,6 +51,7 @@ impl Control {
                 (KeyCode::Char('h'), KeyModifiers::NONE) => Ok(Command::Move(Direction::Left)),
                 (KeyCode::Char('l'), KeyModifiers::NONE) => Ok(Command::Move(Direction::Right)),
                 (KeyCode::Char('w'), KeyModifiers::NONE) => Ok(Command::NextWord),
+                (KeyCode::Char('b'), KeyModifiers::NONE) => Ok(Command::PreviousWord),
                 _ => anyhow::bail!("not yet implement"),
             },
             _ => anyhow::bail!("not yet implement"),

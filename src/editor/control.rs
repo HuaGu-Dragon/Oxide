@@ -56,6 +56,7 @@ impl Control {
                 (KeyCode::Char('$'), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
                     Ok(Command::EndOfLine)
                 }
+                (KeyCode::Char('s'), KeyModifiers::NONE) => Ok(Command::Search),
                 _ => anyhow::bail!("not yet implement"),
             },
             _ => anyhow::bail!("not yet implement"),

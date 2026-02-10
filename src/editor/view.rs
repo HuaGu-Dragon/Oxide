@@ -375,6 +375,13 @@ impl View {
         }
     }
 
+    pub fn open_new_line(&mut self) {
+        self.move_to_end_of_line();
+        self.buffer.insert_newline(&self.cursor);
+        self.move_point(Direction::Right);
+        self.set_render(true);
+    }
+
     pub fn insert_newline(&mut self) {
         self.buffer.insert_newline(&self.cursor);
         self.move_point(Direction::Right);

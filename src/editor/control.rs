@@ -56,6 +56,10 @@ impl Control {
                 (KeyCode::Char('$'), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
                     Ok(Command::EndOfLine)
                 }
+                (KeyCode::Char('o'), KeyModifiers::NONE) => {
+                    self.mode = State::Insert;
+                    Ok(Command::OpenLineBelow)
+                }
                 (KeyCode::Char('s'), KeyModifiers::NONE) => {
                     self.mode = State::Insert;
                     Ok(Command::Search)

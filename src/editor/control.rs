@@ -60,6 +60,10 @@ impl Control {
                     self.mode = State::Insert;
                     Ok(Command::OpenLineBelow)
                 }
+                (KeyCode::Char('o') | KeyCode::Char('O'), KeyModifiers::SHIFT) => {
+                    self.mode = State::Insert;
+                    Ok(Command::OpenLineAbove)
+                }
                 (KeyCode::Char('s'), KeyModifiers::NONE) => {
                     self.mode = State::Insert;
                     Ok(Command::Search)

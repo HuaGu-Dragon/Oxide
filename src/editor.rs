@@ -220,7 +220,8 @@ impl Editor {
             Command::Switch(_) => {}
             Command::NextWord => self.view.move_to_next_word(),
             Command::PreviousWord => self.view.move_to_previous_word(),
-            Command::OpenLineBelow => self.view.open_new_line(),
+            Command::OpenLineBelow => self.view.open_new_line_below(),
+            Command::OpenLineAbove => self.view.open_new_line_above(),
         }
     }
 
@@ -248,7 +249,10 @@ impl Editor {
             | Command::Search => {}
             Command::Switch(_) => {}
             Command::Resize(_) => unreachable!(),
-            Command::NextWord | Command::PreviousWord | Command::OpenLineBelow => {}
+            Command::NextWord
+            | Command::PreviousWord
+            | Command::OpenLineBelow
+            | Command::OpenLineAbove => {}
         }
     }
 
@@ -275,7 +279,10 @@ impl Editor {
             }
             // TODO
             Command::Switch(_) => {}
-            Command::NextWord | Command::PreviousWord | Command::OpenLineBelow => {}
+            Command::NextWord
+            | Command::PreviousWord
+            | Command::OpenLineBelow
+            | Command::OpenLineAbove => {}
         }
     }
     fn refresh_screen(&mut self) {

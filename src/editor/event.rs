@@ -29,6 +29,7 @@ pub enum Command {
     Dismiss,
     Switch(State),
     OpenLineBelow,
+    OpenLineAbove,
 }
 
 impl TryFrom<Event> for Command {

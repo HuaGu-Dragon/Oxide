@@ -31,6 +31,7 @@ const QUIT_TIMES: u8 = 2;
 
 #[derive(Default, PartialEq, Eq)]
 enum PromptType {
+    Command,
     Search,
     Save,
     #[default]
@@ -194,6 +195,7 @@ impl Editor {
                 PromptType::Save => self.handle_event_during_save(command),
                 PromptType::Search => self.handle_event_during_search(command),
                 PromptType::None => self.handle_event_no_prompt(command),
+                PromptType::Command => self.handle_event_during_command(command),
             }
         }
     }
@@ -222,6 +224,7 @@ impl Editor {
             Command::PreviousWord => self.view.move_to_previous_word(),
             Command::OpenLineBelow => self.view.open_new_line_below(),
             Command::OpenLineAbove => self.view.open_new_line_above(),
+            Command::CommandMode => self.set_prompt(PromptType::Command),
         }
     }
 
@@ -252,7 +255,8 @@ impl Editor {
             Command::NextWord
             | Command::PreviousWord
             | Command::OpenLineBelow
-            | Command::OpenLineAbove => {}
+            | Command::OpenLineAbove
+            | Command::CommandMode => {}
         }
     }
 
@@ -282,7 +286,40 @@ impl Editor {
             Command::NextWord
             | Command::PreviousWord
             | Command::OpenLineBelow
-            | Command::OpenLineAbove => {}
+            | Command::OpenLineAbove
+            | Command::CommandMode => {}
+        }
+    }
+
+    fn handle_event_during_command(&mut self, command: Command) {
+        match command {
+            Command::Resize(_) => unreachable!(),
+            Command::Move(_)
+            | Command::Quit
+            | Command::StartOfLine
+            | Command::EndOfLine
+            | Command::Save
+            | Command::Search => {}
+            Command::Insert(_) | Command::Backspace | Command::Delete => {
+                self.command.handle_edit_command(command)
+            }
+            Command::Dismiss => {
+                self.set_prompt(PromptType::None);
+            }
+            Command::Enter => {
+                let com = self.command.get_value();
+                if com == "q" {
+                    self.handle_quit();
+                }
+                self.set_prompt(PromptType::None);
+            }
+            // TODO
+            Command::Switch(_) => {}
+            Command::NextWord
+            | Command::PreviousWord
+            | Command::OpenLineBelow
+            | Command::OpenLineAbove
+            | Command::CommandMode => {}
         }
     }
     fn refresh_screen(&mut self) {
@@ -392,6 +429,9 @@ impl Editor {
             }
             PromptType::Save => self.command.set_prompt("Save as: ".to_string()),
             PromptType::None => self.message.set_render(true),
+            PromptType::Command => {
+                self.command.set_prompt("Command: ".to_string());
+            }
         }
 
         self.command.clear();

@@ -68,6 +68,10 @@ impl Control {
                     self.mode = State::Insert;
                     Ok(Command::Search)
                 }
+                (KeyCode::Char(':'), _) => {
+                    self.mode = State::Insert;
+                    Ok(Command::CommandMode)
+                }
                 _ => anyhow::bail!("not yet implement"),
             },
             _ => anyhow::bail!("not yet implement"),

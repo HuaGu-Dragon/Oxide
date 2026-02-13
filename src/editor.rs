@@ -309,7 +309,7 @@ impl Editor {
             Command::Enter => {
                 let com = self.command.get_value();
                 if com == "q" {
-                    self.handle_quit();
+                    self.quit();
                 }
                 self.set_prompt(PromptType::None);
             }
@@ -401,6 +401,10 @@ impl Editor {
             self.message
                 .update_message(String::from("Error while saving file."));
         }
+    }
+
+    fn quit(&mut self) {
+        self.should_quit = true;
     }
 
     fn handle_quit(&mut self) {

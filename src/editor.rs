@@ -219,12 +219,12 @@ impl Editor {
             Command::Search => self.set_prompt(PromptType::Search),
             Command::Dismiss => {}
             Command::Resize(_) | Command::Quit => unreachable!(),
+            Command::Switch(State::Command) => self.set_prompt(PromptType::Command),
             Command::Switch(_) => {}
             Command::NextWord => self.view.move_to_next_word(),
             Command::PreviousWord => self.view.move_to_previous_word(),
             Command::OpenLineBelow => self.view.open_new_line_below(),
             Command::OpenLineAbove => self.view.open_new_line_above(),
-            Command::CommandMode => self.set_prompt(PromptType::Command),
         }
     }
 
@@ -255,8 +255,7 @@ impl Editor {
             Command::NextWord
             | Command::PreviousWord
             | Command::OpenLineBelow
-            | Command::OpenLineAbove
-            | Command::CommandMode => {}
+            | Command::OpenLineAbove => {}
         }
     }
 
@@ -286,8 +285,7 @@ impl Editor {
             Command::NextWord
             | Command::PreviousWord
             | Command::OpenLineBelow
-            | Command::OpenLineAbove
-            | Command::CommandMode => {}
+            | Command::OpenLineAbove => {}
         }
     }
 
@@ -318,8 +316,7 @@ impl Editor {
             Command::NextWord
             | Command::PreviousWord
             | Command::OpenLineBelow
-            | Command::OpenLineAbove
-            | Command::CommandMode => {}
+            | Command::OpenLineAbove => {}
         }
     }
     fn refresh_screen(&mut self) {

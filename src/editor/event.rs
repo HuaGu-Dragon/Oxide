@@ -30,7 +30,6 @@ pub enum Command {
     Switch(State),
     OpenLineBelow,
     OpenLineAbove,
-    CommandMode,
 }
 
 impl TryFrom<Event> for Command {

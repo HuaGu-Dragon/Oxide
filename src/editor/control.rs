@@ -12,6 +12,7 @@ pub enum State {
     #[default]
     Normal,
     Insert,
+    Command,
 }
 
 impl Control {
@@ -20,6 +21,7 @@ impl Control {
             return match self.mode {
                 State::Normal => self.normal_command(e),
                 State::Insert => self.insert_command(e),
+                _ => todo!(),
             };
         }
 
@@ -50,7 +52,9 @@ impl Control {
                 (KeyCode::Char('j'), KeyModifiers::NONE) => Ok(Command::Move(Direction::Down)),
                 (KeyCode::Char('h'), KeyModifiers::NONE) => Ok(Command::Move(Direction::Left)),
                 (KeyCode::Char('l'), KeyModifiers::NONE) => Ok(Command::Move(Direction::Right)),
-                (KeyCode::Char('w'), KeyModifiers::NONE) => Ok(Command::NextWord),
+                (KeyCode::Char('w') | KeyCode::Char('e'), KeyModifiers::NONE) => {
+                    Ok(Command::NextWord)
+                }
                 (KeyCode::Char('b'), KeyModifiers::NONE) => Ok(Command::PreviousWord),
                 (KeyCode::Char('0'), KeyModifiers::NONE) => Ok(Command::StartOfLine),
                 (KeyCode::Char('$'), KeyModifiers::NONE | KeyModifiers::SHIFT) => {
@@ -70,7 +74,7 @@ impl Control {
                 }
                 (KeyCode::Char(':'), _) => {
                     self.mode = State::Insert;
-                    Ok(Command::CommandMode)
+                    Ok(Command::Switch(State::Command))
                 }
                 _ => anyhow::bail!("not yet implement"),
             },

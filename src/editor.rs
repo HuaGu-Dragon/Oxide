@@ -309,7 +309,12 @@ impl Editor {
                 if com == "q" {
                     self.quit();
                 }
-                self.set_prompt(PromptType::None);
+
+                if com == "w" {
+                    self.handle_save();
+                } else {
+                    self.set_prompt(PromptType::None);
+                }
             }
             // TODO
             Command::Switch(_) => {}

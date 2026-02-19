@@ -385,6 +385,7 @@ impl Editor {
     fn handle_save(&mut self) {
         if self.view.has_file() {
             self.save(None);
+            self.set_prompt(PromptType::None);
         } else {
             self.set_prompt(PromptType::Save);
         }

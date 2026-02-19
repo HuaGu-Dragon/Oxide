@@ -25,7 +25,7 @@ pub enum Command {
     PreviousWord,
     Enter,
     Save,
-    _SaveAndQuit,
+    SaveAndQuit,
     Search,
     Dismiss,
     Switch(State),

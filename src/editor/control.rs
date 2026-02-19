@@ -95,6 +95,12 @@ impl Control {
                     Ok(Command::Switch(State::Normal))
                 }
                 (KeyCode::Char('q'), KeyModifiers::CONTROL) => Ok(Command::Quit),
+                (KeyCode::Char('q') | KeyCode::Char('Q'), mods)
+                    if mods.contains(KeyModifiers::SHIFT)
+                        && mods.contains(KeyModifiers::CONTROL) =>
+                {
+                    Ok(Command::SaveAndQuit)
+                }
                 (KeyCode::Char('s'), KeyModifiers::CONTROL) => Ok(Command::Save),
                 (KeyCode::Char('f'), KeyModifiers::CONTROL) => Ok(Command::Search),
                 (KeyCode::Char(c), KeyModifiers::NONE | KeyModifiers::SHIFT) => {

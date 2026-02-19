@@ -33,7 +33,7 @@ const QUIT_TIMES: u8 = 2;
 enum PromptType {
     Command,
     Search,
-    Save,
+    Save(bool),
     #[default]
     None,
 }
@@ -192,7 +192,7 @@ impl Editor {
             }
 
             match self.prompt {
-                PromptType::Save => self.handle_event_during_save(command),
+                PromptType::Save(quit) => self.handle_event_during_save(command, quit),
                 PromptType::Search => self.handle_event_during_search(command),
                 PromptType::None => self.handle_event_no_prompt(command),
                 PromptType::Command => self.handle_event_during_command(command),
@@ -215,7 +215,8 @@ impl Editor {
             Command::StartOfLine => self.view.move_to_start_of_line(),
             Command::EndOfLine => self.view.move_to_end_of_line(),
             Command::Enter => self.view.insert_newline(),
-            Command::Save => self.handle_save(),
+            Command::Save => self.handle_save(false),
+            Command::SaveAndQuit => self.handle_save(true),
             Command::Search => self.set_prompt(PromptType::Search),
             Command::Dismiss => {}
             Command::Resize(_) | Command::Quit => unreachable!(),
@@ -249,7 +250,8 @@ impl Editor {
             | Command::StartOfLine
             | Command::EndOfLine
             | Command::Save
-            | Command::Search => {}
+            | Command::Search
+            | Command::SaveAndQuit => {}
             Command::Switch(_) => {}
             Command::Resize(_) => unreachable!(),
             Command::NextWord
@@ -259,7 +261,7 @@ impl Editor {
         }
     }
 
-    fn handle_event_during_save(&mut self, command: Command) {
+    fn handle_event_during_save(&mut self, command: Command, quit: bool) {
         match command {
             Command::Resize(_) => unreachable!(),
             Command::Move(_)
@@ -267,6 +269,7 @@ impl Editor {
             | Command::StartOfLine
             | Command::EndOfLine
             | Command::Save
+            | Command::SaveAndQuit
             | Command::Search => {}
             Command::Insert(_) | Command::Backspace | Command::Delete => {
                 self.command.handle_edit_command(command)
@@ -277,7 +280,7 @@ impl Editor {
             }
             Command::Enter => {
                 let file = self.command.get_value();
-                self.save(Some(&file));
+                self.save(Some(&file), quit);
                 self.set_prompt(PromptType::None);
             }
             // TODO
@@ -297,6 +300,7 @@ impl Editor {
             | Command::StartOfLine
             | Command::EndOfLine
             | Command::Save
+            | Command::SaveAndQuit
             | Command::Search => {}
             Command::Insert(_) | Command::Backspace | Command::Delete => {
                 self.command.handle_edit_command(command)
@@ -311,7 +315,9 @@ impl Editor {
                 }
 
                 if com == "w" {
-                    self.handle_save();
+                    self.handle_save(false);
+                } else if com == "wq" {
+                    self.handle_save(true);
                 } else {
                     self.set_prompt(PromptType::None);
                 }
@@ -324,6 +330,7 @@ impl Editor {
             | Command::OpenLineAbove => {}
         }
     }
+
     fn refresh_screen(&mut self) {
         if self.size.height == 0 || self.size.width == 0 {
             return;
@@ -382,16 +389,16 @@ impl Editor {
         self.command.resize(size);
     }
 
-    fn handle_save(&mut self) {
+    fn handle_save(&mut self, quit: bool) {
         if self.view.has_file() {
-            self.save(None);
+            self.save(None, quit);
             self.set_prompt(PromptType::None);
         } else {
-            self.set_prompt(PromptType::Save);
+            self.set_prompt(PromptType::Save(quit));
         }
     }
 
-    fn save(&mut self, file: Option<&str>) {
+    fn save(&mut self, file: Option<&str>, quit: bool) {
         let res = if let Some(name) = file {
             self.view.save_as(name)
         } else {
@@ -400,6 +407,10 @@ impl Editor {
         if res.is_ok() {
             self.message
                 .update_message(String::from("File saved successfully."));
+
+            if quit {
+                self.quit();
+            }
         } else {
             self.message
                 .update_message(String::from("Error while saving file."));
@@ -434,7 +445,7 @@ impl Editor {
                 self.command
                     .set_prompt("Search (Esc to cancel): ".to_string());
             }
-            PromptType::Save => self.command.set_prompt("Save as: ".to_string()),
+            PromptType::Save(_) => self.command.set_prompt("Save as: ".to_string()),
             PromptType::None => self.message.set_render(true),
             PromptType::Command => {
                 self.command.set_prompt("Command: ".to_string());
